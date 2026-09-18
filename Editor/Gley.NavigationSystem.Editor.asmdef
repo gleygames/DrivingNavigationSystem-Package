@@ -1,7 +1,11 @@
 {
     "name": "Gley.NavigationSystem.Editor",
     "rootNamespace": "Gley.NavigationSystem.Editor",
-    "references": [],
+    "references": [
+        "Gley.NavigationSystem",
+        "Gley.Common",
+        "Gley.Common.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ],
