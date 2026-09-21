@@ -13,6 +13,12 @@ namespace Gley.NavigationSystem.Editor
             set { EditorPrefs.SetInt(Prefix + "RoadLayers", value.value); }
         }
 
+        public string CaptureSettingsJson
+        {
+            get { return EditorPrefs.GetString(Prefix + "CaptureSettings", string.Empty); }
+            set { EditorPrefs.SetString(Prefix + "CaptureSettings", value); }
+        }
+
         public float SnapDistance
         {
             get { return EditorPrefs.GetFloat(Prefix + "SnapDistance", 3f); }

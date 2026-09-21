@@ -19,6 +19,7 @@ namespace Gley.NavigationSystem.Editor
         private NavigationEditorPrefs editorPrefs;
         private RoadEditorContext editorContext;
         private SettingsPanel settingsPanel;
+        private MapMode mapMode;
         private NavigationMap targetMap;
         private RoadNetworkAuthoring authoringAsset;
         private NavigationSettings settings;
@@ -58,8 +59,9 @@ namespace Gley.NavigationSystem.Editor
             validationIssues = new List<ValidationIssue>();
             editorContext = new RoadEditorContext(editorPrefs, validationIssues);
             settingsPanel = new SettingsPanel();
-            modeNames = new string[] { "Draw", "Edit", "Connect", "Validate", "Bake" };
-            modes = new IRoadEditorMode[] { new DrawMode(editorContext), new EditMode(editorContext), new ConnectMode(editorContext), new ValidateMode(editorContext), new BakeMode(editorContext) };
+            mapMode = new MapMode(editorContext);
+            modeNames = new string[] { "Map", "Draw", "Edit", "Connect", "Validate", "Bake" };
+            modes = new IRoadEditorMode[] { mapMode, new DrawMode(editorContext), new EditMode(editorContext), new ConnectMode(editorContext), new ValidateMode(editorContext), new BakeMode(editorContext) };
             frustumPlanes = new Plane[6];
             currentModeIndex = 0;
 
@@ -380,6 +382,7 @@ namespace Gley.NavigationSystem.Editor
         {
             SceneView.duringSceneGui -= HandleSceneGUI;
             modes[currentModeIndex].OnExit();
+            mapMode.Dispose();
         }
     }
 }

@@ -1,0 +1,29 @@
+{
+    "name": "Gley.NavigationSystem.Editor.URP",
+    "rootNamespace": "Gley.NavigationSystem.Editor",
+    "references": [
+        "Gley.NavigationSystem",
+        "Gley.NavigationSystem.Editor",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "GLEY_NAV_URP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "GLEY_NAV_URP"
+        }
+    ],
+    "noEngineReferences": false
+}

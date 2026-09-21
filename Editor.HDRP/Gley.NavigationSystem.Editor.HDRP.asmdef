@@ -1,0 +1,29 @@
+{
+    "name": "Gley.NavigationSystem.Editor.HDRP",
+    "rootNamespace": "Gley.NavigationSystem.Editor",
+    "references": [
+        "Gley.NavigationSystem",
+        "Gley.NavigationSystem.Editor",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "GLEY_NAV_HDRP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "",
+            "define": "GLEY_NAV_HDRP"
+        }
+    ],
+    "noEngineReferences": false
+}

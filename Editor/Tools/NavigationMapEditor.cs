@@ -7,11 +7,13 @@ namespace Gley.NavigationSystem.Editor
     public class NavigationMapEditor : UnityEditor.Editor
     {
         private MapRectangleSync sync;
+        private MapRectangleHandles rectangleHandles;
         private MapOverlayDrawer overlayDrawer;
 
         private void OnEnable()
         {
             sync = new MapRectangleSync();
+            rectangleHandles = new MapRectangleHandles();
             overlayDrawer = new MapOverlayDrawer(new NavigationEditorPrefs());
         }
 
@@ -101,7 +103,7 @@ namespace Gley.NavigationSystem.Editor
             }
 
             float unitsPerMeter = ResolveUnitsPerMeter();
-            DrawCornerHandles(map, data, unitsPerMeter);
+            rectangleHandles.Draw(data, map.transform.position.y, unitsPerMeter);
             ApplySceneTransformChange(map, data, unitsPerMeter);
 
             overlayDrawer.DrawSceneOverlay(map, unitsPerMeter);
@@ -122,57 +124,6 @@ namespace Gley.NavigationSystem.Editor
                 return 1f;
             }
             return settings.UnitsPerMeter;
-        }
-
-        private void DrawCornerHandles(NavigationMap map, MapData data, float unitsPerMeter)
-        {
-            if (data.Locked)
-            {
-                return;
-            }
-
-            bool keepRatio = data.ImageState == MapImageState.Custom;
-            MapFrame frame = data.CreateFrame();
-            Vector2 size = data.RectangleSize;
-            float handleSize = HandleUtility.GetHandleSize(map.transform.position) * 0.15f;
-
-            for (int corner = 0; corner < 4; corner++)
-            {
-                Vector2 cornerMap = GetCornerMap(corner, size);
-                Vector3 cornerTrue = frame.MapToTrue(cornerMap, 0f);
-                Vector3 cornerWorld = new Vector3(cornerTrue.x * unitsPerMeter, map.transform.position.y, cornerTrue.z * unitsPerMeter);
-
-                EditorGUI.BeginChangeCheck();
-                Vector3 newWorld = Handles.FreeMoveHandle(cornerWorld, handleSize, Vector3.zero, Handles.SphereHandleCap);
-                if (!EditorGUI.EndChangeCheck())
-                {
-                    continue;
-                }
-
-                Vector3 newTrue = new Vector3(newWorld.x / unitsPerMeter, 0f, newWorld.z / unitsPerMeter);
-                Vector2 newCornerMap = frame.TrueToMap(newTrue);
-
-                Undo.RecordObject(data, "Resize Map Rectangle");
-                sync.ResizeFromCorner(data, corner, newCornerMap, keepRatio);
-                EditorUtility.SetDirty(data);
-            }
-        }
-
-        private Vector2 GetCornerMap(int corner, Vector2 size)
-        {
-            if (corner == 0)
-            {
-                return new Vector2(0f, 0f);
-            }
-            if (corner == 1)
-            {
-                return new Vector2(size.x, 0f);
-            }
-            if (corner == 2)
-            {
-                return new Vector2(size.x, size.y);
-            }
-            return new Vector2(0f, size.y);
         }
 
         private void ApplySceneTransformChange(NavigationMap map, MapData data, float unitsPerMeter)
