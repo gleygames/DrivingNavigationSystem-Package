@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
 using Gley.Common.Editor;
@@ -7,6 +8,8 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationWindow : EditorWindow
     {
+        private const int OperationFollowUpFrameBudget = 3;
+
         private IRoadEditorMode[] modes;
         private string[] modeNames;
         private NavigationAssetLocator locator;
@@ -19,12 +22,17 @@ namespace Gley.NavigationSystem.Editor
         private NavigationMap targetMap;
         private RoadNetworkAuthoring authoringAsset;
         private NavigationSettings settings;
+        private Stopwatch operationStopwatch;
+        private Stopwatch sceneDrawStopwatch;
         private HashSet<int> typeFilter;
         private List<int> visibleRoadIds;
         private List<bool> detailedRoads;
         private List<ValidationIssue> validationIssues;
         private Plane[] frustumPlanes;
         private Vector2 scrollPosition;
+        private double lastOperationMilliseconds;
+        private double lastSceneDrawMilliseconds;
+        private int operationFollowUpFramesRemaining;
         private int currentModeIndex;
         private bool showViewFoldout;
         private bool showSettingsFoldout;
@@ -40,6 +48,8 @@ namespace Gley.NavigationSystem.Editor
             locator = new NavigationAssetLocator();
             bakeStatus = new BakeStatus();
             editorPrefs = new NavigationEditorPrefs();
+            operationStopwatch = new Stopwatch();
+            sceneDrawStopwatch = new Stopwatch();
             drawPlanner = new RoadDrawPlanner();
             sceneDrawer = new RoadSceneDrawer(editorPrefs);
             typeFilter = new HashSet<int>();
@@ -69,11 +79,12 @@ namespace Gley.NavigationSystem.Editor
 
             DrawHeader();
             DrawToolbar();
+            DrawDiagnostics();
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             DrawViewFoldout();
             DrawSettingsFoldout();
-            modes[currentModeIndex].OnWindowGUI();
+            RunModeWindowGUI();
             EditorGUILayout.EndScrollView();
         }
 
@@ -209,6 +220,12 @@ namespace Gley.NavigationSystem.Editor
             modes[currentModeIndex].OnEnter();
         }
 
+        private void DrawDiagnostics()
+        {
+            string message = "Last operation: " + lastOperationMilliseconds.ToString("F2") + " ms   Last Scene draw: " + lastSceneDrawMilliseconds.ToString("F2") + " ms";
+            EditorGUILayout.LabelField("Diagnostics", message);
+        }
+
         private void DrawViewFoldout()
         {
             showViewFoldout = EditorGUILayout.Foldout(showViewFoldout, "View");
@@ -284,10 +301,54 @@ namespace Gley.NavigationSystem.Editor
             EditorGUI.indentLevel--;
         }
 
+        private void RunModeWindowGUI()
+        {
+            int versionBefore = GetAuthoringVersion();
+            operationStopwatch.Restart();
+            modes[currentModeIndex].OnWindowGUI();
+            operationStopwatch.Stop();
+
+            RecordOperationTiming(versionBefore, operationStopwatch.Elapsed.TotalMilliseconds);
+        }
+
+        private int GetAuthoringVersion()
+        {
+            if (authoringAsset == null)
+            {
+                return 0;
+            }
+            return authoringAsset.Version;
+        }
+
+        private void RecordOperationTiming(int versionBefore, double elapsedMilliseconds)
+        {
+            if (GetAuthoringVersion() != versionBefore)
+            {
+                lastOperationMilliseconds = elapsedMilliseconds;
+                operationFollowUpFramesRemaining = OperationFollowUpFrameBudget;
+                return;
+            }
+
+            if (operationFollowUpFramesRemaining > 0)
+            {
+                lastOperationMilliseconds += elapsedMilliseconds;
+                operationFollowUpFramesRemaining--;
+            }
+        }
+
         private void HandleSceneGUI(SceneView sceneView)
         {
+            sceneDrawStopwatch.Restart();
             DrawRoadNetwork(sceneView);
+            sceneDrawStopwatch.Stop();
+            lastSceneDrawMilliseconds = sceneDrawStopwatch.Elapsed.TotalMilliseconds;
+
+            int versionBefore = GetAuthoringVersion();
+            operationStopwatch.Restart();
             modes[currentModeIndex].OnSceneGUI(sceneView);
+            operationStopwatch.Stop();
+
+            RecordOperationTiming(versionBefore, operationStopwatch.Elapsed.TotalMilliseconds);
         }
 
         private void DrawRoadNetwork(SceneView sceneView)
