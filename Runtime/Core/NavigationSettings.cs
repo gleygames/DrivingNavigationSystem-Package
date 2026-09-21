@@ -14,6 +14,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private int formatVersion = CurrentFormatVersion;
         [SerializeField] private int nextRoadTypeId;
         [SerializeField] private int version;
+        [SerializeField] private bool blockBuildOnProblems;
 
         public IReadOnlyList<RoadType> RoadTypes { get { return roadTypes; } }
         public float UnitsPerMeter { get { return unitsPerMeter; } }
@@ -21,6 +22,7 @@ namespace Gley.NavigationSystem
         int IFormatVersioned.CurrentFormatVersion { get { return CurrentFormatVersion; } }
         public int NextRoadTypeId { get { return nextRoadTypeId; } }
         public int Version { get { return version; } }
+        public bool BlockBuildOnProblems { get { return blockBuildOnProblems; } }
 
         public void ResetToDefaults()
         {
