@@ -15,6 +15,7 @@ namespace Gley.NavigationSystem
         private readonly int[] closedStamp;
         private readonly int[] pathBuffer;
         private readonly RoadNetworkData network;
+        private readonly RouteSnapper snapper;
 
         private float[] heapKeys;
         private float[] heapCosts;
@@ -23,17 +24,21 @@ namespace Gley.NavigationSystem
         private UTurnRule uTurn;
         private float minCostPerMeter;
         private float destinationDistance;
+        private float startDistance;
         private float bestCost;
+        private float bestFinishFrom;
         private int destinationRoad;
         private int bestState;
         private int bestDirection;
         private int stamp;
         private int heapCount;
         private bool hasCandidate;
+        private bool hasStartPoint;
 
         public Pathfinder(RoadNetworkData network)
         {
             this.network = network;
+            snapper = new RouteSnapper(network);
 
             int roadCount = network.RoadCount;
             int stateCount = roadCount * 2;
@@ -49,6 +54,48 @@ namespace Gley.NavigationSystem
             heapKeys = new float[heapCapacity];
             heapCosts = new float[heapCapacity];
             heapStates = new int[heapCapacity];
+        }
+
+        public void FindRoute(RouteRequest request, Route result)
+        {
+            result.Clear();
+            result.Network = network;
+            result.Destination = request.To;
+
+            RoadPoint start;
+            FailureReason failure = snapper.SnapStart(request, out start);
+            if (failure != FailureReason.None)
+            {
+                result.Failure = failure;
+                return;
+            }
+
+            RoadPoint end;
+            failure = snapper.SnapDestination(request, out end);
+            if (failure != FailureReason.None)
+            {
+                result.Failure = failure;
+                return;
+            }
+
+            result.Start = start;
+            result.End = end;
+
+            if (IsWithinArrivalDistance(request, end))
+            {
+                result.Success = true;
+                result.ArrivedImmediately = true;
+                return;
+            }
+
+            destinationRoad = end.RoadIndex;
+            destinationDistance = end.DistanceAlong;
+            destinationPoint = end.Position;
+
+            BeginSearch(request.Preferences);
+            AddRoadPointStartStates(request, start);
+            RunSearch();
+            WriteResult(result);
         }
 
         public void FindRouteBetweenIntersections(int from, int to, RoutePreferences preferences, Route result)
@@ -96,26 +143,12 @@ namespace Gley.NavigationSystem
             WriteResult(result);
         }
 
-        private bool SetIntersectionDestination(int intersection)
+        private bool IsWithinArrivalDistance(RouteRequest request, RoadPoint end)
         {
-            IntersectionRecord record = network.GetIntersection(intersection);
-            if (record.LinkCount == 0)
-            {
-                return false;
-            }
-
-            destinationRoad = network.GetLink(record.FirstLink);
-            RoadRecord road = network.GetRoad(destinationRoad);
-            if (road.StartIntersection == intersection)
-            {
-                destinationDistance = 0f;
-            }
-            else
-            {
-                destinationDistance = road.Length;
-            }
-            destinationPoint = record.Position;
-            return true;
+            float deltaX = request.From.x - end.Position.x;
+            float deltaZ = request.From.z - end.Position.z;
+            float distance = Mathf.Sqrt(deltaX * deltaX + deltaZ * deltaZ);
+            return distance <= request.ArrivalDistance;
         }
 
         private void BeginSearch(RoutePreferences preferences)
@@ -123,7 +156,10 @@ namespace Gley.NavigationSystem
             stamp++;
             heapCount = 0;
             hasCandidate = false;
+            hasStartPoint = false;
+            startDistance = 0f;
             bestCost = float.PositiveInfinity;
+            bestFinishFrom = 0f;
             bestState = NoState;
             bestDirection = 0;
             uTurn = preferences.UTurn;
@@ -161,154 +197,64 @@ namespace Gley.NavigationSystem
             }
         }
 
-        private void AddIntersectionStartStates(int intersection)
+        private void AddRoadPointStartStates(RouteRequest request, RoadPoint start)
         {
-            IntersectionRecord record = network.GetIntersection(intersection);
-            int lastLink = record.FirstLink + record.LinkCount;
-            for (int l = record.FirstLink; l < lastLink; l++)
+            int roadIndex = start.RoadIndex;
+            RoadRecord road = network.GetRoad(roadIndex);
+            float distance = start.DistanceAlong;
+
+            bool allowForward = true;
+            bool allowBackward = !road.OneWay;
+            if (request.HasHeading && uTurn != UTurnRule.Anywhere)
             {
-                int roadIndex = network.GetLink(l);
-                RoadRecord road = network.GetRoad(roadIndex);
-                float cost = road.Length * costPerMeter[roadIndex];
-                if (road.StartIntersection == intersection)
+                bool headingForward = Vector3.Dot(request.Heading, start.Tangent) >= 0f;
+                if (headingForward)
                 {
-                    AddStartState(roadIndex * 2, cost);
+                    allowBackward = false;
                 }
-                if (road.EndIntersection == intersection && !road.OneWay)
+                else if (allowBackward)
                 {
-                    AddStartState(roadIndex * 2 + 1, cost);
+                    allowForward = false;
                 }
             }
-        }
 
-        private void AddStartState(int state, float cost)
-        {
-            Relax(state, cost, NoState);
-        }
+            hasStartPoint = true;
+            startDistance = distance;
 
-        private void Relax(int state, float cost, int fromState)
-        {
-            if (closedStamp[state] == stamp)
+            float roadCostPerMeter = costPerMeter[roadIndex];
+            if (allowForward)
+            {
+                AddStartState(roadIndex * 2, (road.Length - distance) * roadCostPerMeter);
+            }
+            if (allowBackward)
+            {
+                AddStartState(roadIndex * 2 + 1, distance * roadCostPerMeter);
+            }
+
+            if (roadIndex != destinationRoad)
             {
                 return;
             }
-            if (visitStamp[state] == stamp && cost >= stateCost[state])
+            if (allowForward && destinationDistance >= distance)
             {
-                return;
+                ConsiderCandidate(NoState, 0, distance, (destinationDistance - distance) * roadCostPerMeter);
             }
-
-            visitStamp[state] = stamp;
-            stateCost[state] = cost;
-            parent[state] = fromState;
-            Push(state, cost + Heuristic(state), cost);
-        }
-
-        private float Heuristic(int state)
-        {
-            Vector3 position = network.GetIntersection(GetEndIntersection(state)).Position;
-            float deltaX = destinationPoint.x - position.x;
-            float deltaZ = destinationPoint.z - position.z;
-            return Mathf.Sqrt(deltaX * deltaX + deltaZ * deltaZ) * minCostPerMeter;
-        }
-
-        private int GetEndIntersection(int state)
-        {
-            RoadRecord road = network.GetRoad(state / 2);
-            if (state % 2 == 0)
+            if (allowBackward && destinationDistance <= distance)
             {
-                return road.EndIntersection;
-            }
-            return road.StartIntersection;
-        }
-
-        private void Push(int state, float key, float cost)
-        {
-            if (heapCount == heapStates.Length)
-            {
-                GrowHeap();
-            }
-
-            int index = heapCount;
-            heapCount++;
-            while (index > 0)
-            {
-                int parentIndex = (index - 1) / 2;
-                if (heapKeys[parentIndex] <= key)
-                {
-                    break;
-                }
-                heapKeys[index] = heapKeys[parentIndex];
-                heapCosts[index] = heapCosts[parentIndex];
-                heapStates[index] = heapStates[parentIndex];
-                index = parentIndex;
-            }
-            heapKeys[index] = key;
-            heapCosts[index] = cost;
-            heapStates[index] = state;
-        }
-
-        private void GrowHeap()
-        {
-            int capacity = heapStates.Length * 2;
-
-            float[] newKeys = new float[capacity];
-            float[] newCosts = new float[capacity];
-            int[] newStates = new int[capacity];
-            Array.Copy(heapKeys, newKeys, heapCount);
-            Array.Copy(heapCosts, newCosts, heapCount);
-            Array.Copy(heapStates, newStates, heapCount);
-
-            heapKeys = newKeys;
-            heapCosts = newCosts;
-            heapStates = newStates;
-        }
-
-        private void EvaluateFinish(int intersection, int state, float cost)
-        {
-            RoadRecord road = network.GetRoad(destinationRoad);
-            bool deadEnd = network.IsDeadEnd(intersection);
-            if (road.StartIntersection == intersection)
-            {
-                TryFinish(state, 0, destinationDistance, cost, road.OneWay, deadEnd);
-            }
-            if (road.EndIntersection == intersection)
-            {
-                TryFinish(state, 1, road.Length - destinationDistance, cost, road.OneWay, deadEnd);
+                ConsiderCandidate(NoState, 1, distance, (distance - destinationDistance) * roadCostPerMeter);
             }
         }
 
-        private void TryFinish(int state, int direction, float partialLength, float cost, bool oneWay, bool deadEnd)
+        private void ConsiderCandidate(int state, int direction, float finishFrom, float total)
         {
-            if (partialLength > 0f)
-            {
-                if (direction == 1 && oneWay)
-                {
-                    return;
-                }
-                if (state != NoState && IsUTurn(state, destinationRoad, direction) && !IsUTurnAllowed(deadEnd))
-                {
-                    return;
-                }
-            }
-
-            float total = cost + partialLength * costPerMeter[destinationRoad];
             if (total < bestCost)
             {
                 bestCost = total;
                 bestState = state;
                 bestDirection = direction;
+                bestFinishFrom = finishFrom;
                 hasCandidate = true;
             }
-        }
-
-        private bool IsUTurn(int state, int nextRoad, int nextDirection)
-        {
-            return state / 2 == nextRoad && state % 2 != nextDirection;
-        }
-
-        private bool IsUTurnAllowed(bool deadEnd)
-        {
-            return uTurn != UTurnRule.Never || deadEnd;
         }
 
         private void RunSearch()
@@ -381,6 +327,16 @@ namespace Gley.NavigationSystem
             heapStates[index] = lastState;
         }
 
+        private int GetEndIntersection(int state)
+        {
+            RoadRecord road = network.GetRoad(state / 2);
+            if (state % 2 == 0)
+            {
+                return road.EndIntersection;
+            }
+            return road.StartIntersection;
+        }
+
         private void ExpandState(int state, int intersection, float cost)
         {
             IntersectionRecord record = network.GetIntersection(intersection);
@@ -411,6 +367,83 @@ namespace Gley.NavigationSystem
             Relax(nextRoad * 2 + nextDirection, nextCost, state);
         }
 
+        private bool IsUTurn(int state, int nextRoad, int nextDirection)
+        {
+            return state / 2 == nextRoad && state % 2 != nextDirection;
+        }
+
+        private bool IsUTurnAllowed(bool deadEnd)
+        {
+            return uTurn != UTurnRule.Never || deadEnd;
+        }
+
+        private void Relax(int state, float cost, int fromState)
+        {
+            if (closedStamp[state] == stamp)
+            {
+                return;
+            }
+            if (visitStamp[state] == stamp && cost >= stateCost[state])
+            {
+                return;
+            }
+
+            visitStamp[state] = stamp;
+            stateCost[state] = cost;
+            parent[state] = fromState;
+            Push(state, cost + Heuristic(state), cost);
+        }
+
+        private float Heuristic(int state)
+        {
+            Vector3 position = network.GetIntersection(GetEndIntersection(state)).Position;
+            float deltaX = destinationPoint.x - position.x;
+            float deltaZ = destinationPoint.z - position.z;
+            return Mathf.Sqrt(deltaX * deltaX + deltaZ * deltaZ) * minCostPerMeter;
+        }
+
+        private void Push(int state, float key, float cost)
+        {
+            if (heapCount == heapStates.Length)
+            {
+                GrowHeap();
+            }
+
+            int index = heapCount;
+            heapCount++;
+            while (index > 0)
+            {
+                int parentIndex = (index - 1) / 2;
+                if (heapKeys[parentIndex] <= key)
+                {
+                    break;
+                }
+                heapKeys[index] = heapKeys[parentIndex];
+                heapCosts[index] = heapCosts[parentIndex];
+                heapStates[index] = heapStates[parentIndex];
+                index = parentIndex;
+            }
+            heapKeys[index] = key;
+            heapCosts[index] = cost;
+            heapStates[index] = state;
+        }
+
+        private void GrowHeap()
+        {
+            int capacity = heapStates.Length * 2;
+
+            float[] newKeys = new float[capacity];
+            float[] newCosts = new float[capacity];
+            int[] newStates = new int[capacity];
+            Array.Copy(heapKeys, newKeys, heapCount);
+            Array.Copy(heapCosts, newCosts, heapCount);
+            Array.Copy(heapStates, newStates, heapCount);
+
+            heapKeys = newKeys;
+            heapCosts = newCosts;
+            heapStates = newStates;
+        }
+
         private void WriteResult(Route result)
         {
             if (!hasCandidate)
@@ -434,29 +467,43 @@ namespace Gley.NavigationSystem
                 int pathState = pathBuffer[i];
                 int roadIndex = pathState / 2;
                 RoadRecord road = network.GetRoad(roadIndex);
-                if (pathState % 2 == 0)
+                bool forward = pathState % 2 == 0;
+
+                float fromDistance;
+                float toDistance;
+                if (forward)
                 {
-                    AppendSegment(result, roadIndex, true, 0f, road.Length);
+                    fromDistance = 0f;
+                    toDistance = road.Length;
                 }
                 else
                 {
-                    AppendSegment(result, roadIndex, false, road.Length, 0f);
+                    fromDistance = road.Length;
+                    toDistance = 0f;
+                }
+                if (i == count - 1 && hasStartPoint)
+                {
+                    fromDistance = startDistance;
+                }
+
+                if (fromDistance != toDistance)
+                {
+                    AppendSegment(result, roadIndex, forward, fromDistance, toDistance);
                 }
             }
 
-            RoadRecord destination = network.GetRoad(destinationRoad);
             if (bestDirection == 0)
             {
-                if (destinationDistance > 0f)
+                if (destinationDistance > bestFinishFrom)
                 {
-                    AppendSegment(result, destinationRoad, true, 0f, destinationDistance);
+                    AppendSegment(result, destinationRoad, true, bestFinishFrom, destinationDistance);
                 }
             }
             else
             {
-                if (destination.Length - destinationDistance > 0f)
+                if (bestFinishFrom > destinationDistance)
                 {
-                    AppendSegment(result, destinationRoad, false, destination.Length, destinationDistance);
+                    AppendSegment(result, destinationRoad, false, bestFinishFrom, destinationDistance);
                 }
             }
 
@@ -475,6 +522,84 @@ namespace Gley.NavigationSystem
             {
                 result.Eta += pieceLength / road.Speed;
             }
+        }
+
+        private bool SetIntersectionDestination(int intersection)
+        {
+            IntersectionRecord record = network.GetIntersection(intersection);
+            if (record.LinkCount == 0)
+            {
+                return false;
+            }
+
+            destinationRoad = network.GetLink(record.FirstLink);
+            RoadRecord road = network.GetRoad(destinationRoad);
+            if (road.StartIntersection == intersection)
+            {
+                destinationDistance = 0f;
+            }
+            else
+            {
+                destinationDistance = road.Length;
+            }
+            destinationPoint = record.Position;
+            return true;
+        }
+
+        private void AddIntersectionStartStates(int intersection)
+        {
+            IntersectionRecord record = network.GetIntersection(intersection);
+            int lastLink = record.FirstLink + record.LinkCount;
+            for (int l = record.FirstLink; l < lastLink; l++)
+            {
+                int roadIndex = network.GetLink(l);
+                RoadRecord road = network.GetRoad(roadIndex);
+                float cost = road.Length * costPerMeter[roadIndex];
+                if (road.StartIntersection == intersection)
+                {
+                    AddStartState(roadIndex * 2, cost);
+                }
+                if (road.EndIntersection == intersection && !road.OneWay)
+                {
+                    AddStartState(roadIndex * 2 + 1, cost);
+                }
+            }
+        }
+
+        private void EvaluateFinish(int intersection, int state, float cost)
+        {
+            RoadRecord road = network.GetRoad(destinationRoad);
+            bool deadEnd = network.IsDeadEnd(intersection);
+            if (road.StartIntersection == intersection)
+            {
+                TryFinish(state, 0, 0f, destinationDistance, cost, road.OneWay, deadEnd);
+            }
+            if (road.EndIntersection == intersection)
+            {
+                TryFinish(state, 1, road.Length, road.Length - destinationDistance, cost, road.OneWay, deadEnd);
+            }
+        }
+
+        private void TryFinish(int state, int direction, float finishFrom, float partialLength, float cost, bool oneWay, bool deadEnd)
+        {
+            if (partialLength > 0f)
+            {
+                if (direction == 1 && oneWay)
+                {
+                    return;
+                }
+                if (state != NoState && IsUTurn(state, destinationRoad, direction) && !IsUTurnAllowed(deadEnd))
+                {
+                    return;
+                }
+            }
+
+            ConsiderCandidate(state, direction, finishFrom, cost + partialLength * costPerMeter[destinationRoad]);
+        }
+
+        private void AddStartState(int state, float cost)
+        {
+            Relax(state, cost, NoState);
         }
     }
 }
