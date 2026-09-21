@@ -6,7 +6,7 @@ namespace Gley.NavigationSystem
 {
     internal class RoadNetworkBuilder
     {
-        public void Build(RoadNetworkBuildInput input, NavigationSettings settings, RoadNetworkData target)
+        public void Build(RoadNetworkBuildInput input, NavigationSettings settings, RoadNetworkData target, float cellSize = RoadGrid.DefaultCellSize)
         {
             int intersectionCount = input.Intersections.Count;
             Dictionary<int, int> intersectionIndexById = new Dictionary<int, int>(intersectionCount);
@@ -111,7 +111,13 @@ namespace Gley.NavigationSystem
                 intersections[i] = new IntersectionRecord(intersections[i].Id, intersections[i].Position, firstLink, intersectionLinks.Count);
             }
 
-            target.SetData(roads.ToArray(), intersections, links.ToArray(), points.ToArray(), pointDistances.ToArray(), settings, settings.Version, maxSpeed);
+            RoadRecord[] roadArray = roads.ToArray();
+            Vector3[] pointArray = points.ToArray();
+
+            RoadGrid grid = new RoadGrid();
+            grid.Build(roadArray, pointArray, cellSize);
+
+            target.SetData(roadArray, intersections, links.ToArray(), pointArray, pointDistances.ToArray(), grid, settings, settings.Version, maxSpeed);
         }
     }
 }

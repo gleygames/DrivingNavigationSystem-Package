@@ -11,12 +11,14 @@ namespace Gley.NavigationSystem
         [SerializeField] private Vector3[] points = new Vector3[0];
         [SerializeField] private float[] pointDistances = new float[0];
         [SerializeField] private int[] links = new int[0];
+        [SerializeField] private RoadGrid grid = new RoadGrid();
         [SerializeField] private NavigationSettings settings;
         [SerializeField] private float maxSpeed;
         [SerializeField] private int formatVersion = CurrentFormatVersion;
         [SerializeField] private int sourceVersion;
         [SerializeField] private int settingsVersion;
 
+        public RoadGrid Grid { get { return grid; } }
         public NavigationSettings Settings { get { return settings; } }
         public float MaxSpeed { get { return maxSpeed; } }
         public int FormatVersion { get { return formatVersion; } }
@@ -65,13 +67,14 @@ namespace Gley.NavigationSystem
             return intersections[intersectionIndex].LinkCount == 1;
         }
 
-        internal void SetData(RoadRecord[] roads, IntersectionRecord[] intersections, int[] links, Vector3[] points, float[] pointDistances, NavigationSettings settings, int settingsVersion, float maxSpeed)
+        internal void SetData(RoadRecord[] roads, IntersectionRecord[] intersections, int[] links, Vector3[] points, float[] pointDistances, RoadGrid grid, NavigationSettings settings, int settingsVersion, float maxSpeed)
         {
             this.roads = roads;
             this.intersections = intersections;
             this.links = links;
             this.points = points;
             this.pointDistances = pointDistances;
+            this.grid = grid;
             this.settings = settings;
             this.settingsVersion = settingsVersion;
             this.maxSpeed = maxSpeed;
