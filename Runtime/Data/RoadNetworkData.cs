@@ -80,5 +80,15 @@ namespace Gley.NavigationSystem
             this.settingsVersion = settingsVersion;
             this.maxSpeed = maxSpeed;
         }
+
+        internal void SetSourceVersion(int value)
+        {
+            sourceVersion = value;
+        }
+
+        internal void SetFormatVersion(int value)
+        {
+            formatVersion = value;
+        }
     }
 }

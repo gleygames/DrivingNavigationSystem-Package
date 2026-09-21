@@ -91,5 +91,10 @@ namespace Gley.NavigationSystem.Editor
             gridCellSize = value;
             MarkChanged();
         }
+
+        internal void SetRuntimeAsset(RoadNetworkData value)
+        {
+            runtimeAsset = value;
+        }
     }
 }
