@@ -15,6 +15,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private int nextRoadTypeId;
         [SerializeField] private int version;
         [SerializeField] private bool blockBuildOnProblems;
+        [SerializeField] private bool imperialUnits;
 
         public IReadOnlyList<RoadType> RoadTypes { get { return roadTypes; } }
         public float UnitsPerMeter { get { return unitsPerMeter; } }
@@ -23,6 +24,7 @@ namespace Gley.NavigationSystem
         public int NextRoadTypeId { get { return nextRoadTypeId; } }
         public int Version { get { return version; } }
         public bool BlockBuildOnProblems { get { return blockBuildOnProblems; } }
+        public bool ImperialUnits { get { return imperialUnits; } }
 
         public void ResetToDefaults()
         {
@@ -142,9 +144,51 @@ namespace Gley.NavigationSystem
             version++;
         }
 
+        public void SetRoadTypeName(int id, string value)
+        {
+            RoadType roadType = FindRoadType(id);
+            if (roadType == null)
+            {
+                return;
+            }
+
+            roadType.SetName(value);
+        }
+
+        public void SetRoadTypeColor(int id, Color value)
+        {
+            RoadType roadType = FindRoadType(id);
+            if (roadType == null)
+            {
+                return;
+            }
+
+            roadType.SetColor(value);
+        }
+
         public string GetChannelName(int index)
         {
             return viewChannelNames[index];
+        }
+
+        public void SetChannelName(int index, string value)
+        {
+            viewChannelNames[index] = value;
+        }
+
+        public void SetUnitsPerMeter(float value)
+        {
+            unitsPerMeter = value;
+        }
+
+        public void SetImperialUnits(bool value)
+        {
+            imperialUnits = value;
+        }
+
+        public void SetBlockBuildOnProblems(bool value)
+        {
+            blockBuildOnProblems = value;
         }
 
         internal void SetFormatVersion(int value)

@@ -15,15 +15,19 @@ namespace Gley.NavigationSystem.Editor
         private RoadSceneDrawer sceneDrawer;
         private NavigationEditorPrefs editorPrefs;
         private RoadEditorContext editorContext;
+        private SettingsPanel settingsPanel;
         private NavigationMap targetMap;
         private RoadNetworkAuthoring authoringAsset;
+        private NavigationSettings settings;
         private HashSet<int> typeFilter;
         private List<int> visibleRoadIds;
         private List<bool> detailedRoads;
         private List<ValidationIssue> validationIssues;
         private Plane[] frustumPlanes;
+        private Vector2 scrollPosition;
         private int currentModeIndex;
         private bool showViewFoldout;
+        private bool showSettingsFoldout;
 
         [MenuItem(NavigationWindowProperties.MenuItem, false, 0)]
         private static void OpenWindow()
@@ -43,6 +47,7 @@ namespace Gley.NavigationSystem.Editor
             detailedRoads = new List<bool>();
             validationIssues = new List<ValidationIssue>();
             editorContext = new RoadEditorContext(editorPrefs, validationIssues);
+            settingsPanel = new SettingsPanel();
             modeNames = new string[] { "Draw", "Edit", "Connect", "Validate", "Bake" };
             modes = new IRoadEditorMode[] { new DrawMode(editorContext), new EditMode(editorContext), new ConnectMode(editorContext), new ValidateMode(editorContext), new BakeMode(editorContext) };
             frustumPlanes = new Plane[6];
@@ -64,9 +69,12 @@ namespace Gley.NavigationSystem.Editor
 
             DrawHeader();
             DrawToolbar();
-            DrawViewFoldout();
 
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            DrawViewFoldout();
+            DrawSettingsFoldout();
             modes[currentModeIndex].OnWindowGUI();
+            EditorGUILayout.EndScrollView();
         }
 
         private void OnSelectionChange()
@@ -113,7 +121,7 @@ namespace Gley.NavigationSystem.Editor
         {
             FormatMigrator migrator = new FormatMigrator(new List<IFormatMigration>());
 
-            NavigationSettings settings = locator.FindOrCreateSettings();
+            settings = locator.FindOrCreateSettings();
             migrator.MigrateIfNeeded(settings);
             AssignSettingsIfMissing(settings);
 
@@ -261,6 +269,19 @@ namespace Gley.NavigationSystem.Editor
                     typeFilter.Remove(roadType.Id);
                 }
             }
+        }
+
+        private void DrawSettingsFoldout()
+        {
+            showSettingsFoldout = EditorGUILayout.Foldout(showSettingsFoldout, "Settings");
+            if (!showSettingsFoldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            settingsPanel.Draw(settings);
+            EditorGUI.indentLevel--;
         }
 
         private void HandleSceneGUI(SceneView sceneView)
