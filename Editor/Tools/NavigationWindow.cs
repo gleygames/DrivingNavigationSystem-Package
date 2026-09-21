@@ -14,6 +14,7 @@ namespace Gley.NavigationSystem.Editor
         private RoadDrawPlanner drawPlanner;
         private RoadSceneDrawer sceneDrawer;
         private NavigationEditorPrefs editorPrefs;
+        private RoadEditorContext editorContext;
         private NavigationMap targetMap;
         private RoadNetworkAuthoring authoringAsset;
         private HashSet<int> typeFilter;
@@ -32,8 +33,6 @@ namespace Gley.NavigationSystem.Editor
 
         private void OnEnable()
         {
-            modeNames = new string[] { "Draw", "Edit", "Connect", "Validate", "Bake" };
-            modes = new IRoadEditorMode[] { new DrawMode(), new EditMode(), new ConnectMode(), new ValidateMode(), new BakeMode() };
             locator = new NavigationAssetLocator();
             bakeStatus = new BakeStatus();
             editorPrefs = new NavigationEditorPrefs();
@@ -43,6 +42,9 @@ namespace Gley.NavigationSystem.Editor
             visibleRoadIds = new List<int>();
             detailedRoads = new List<bool>();
             validationIssues = new List<ValidationIssue>();
+            editorContext = new RoadEditorContext(editorPrefs, validationIssues);
+            modeNames = new string[] { "Draw", "Edit", "Connect", "Validate", "Bake" };
+            modes = new IRoadEditorMode[] { new DrawMode(editorContext), new EditMode(), new ConnectMode(), new ValidateMode(), new BakeMode() };
             frustumPlanes = new Plane[6];
             currentModeIndex = 0;
 
@@ -93,6 +95,7 @@ namespace Gley.NavigationSystem.Editor
             targetMap = resolved;
             ResolveAuthoring();
             MigrateAssets();
+            UpdateEditorContext();
         }
 
         private void ResolveAuthoring()
@@ -144,6 +147,16 @@ namespace Gley.NavigationSystem.Editor
             serializedObject.FindProperty("settings").objectReferenceValue = settings;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(authoringAsset);
+        }
+
+        private void UpdateEditorContext()
+        {
+            MapData mapData = null;
+            if (targetMap != null)
+            {
+                mapData = targetMap.MapData;
+            }
+            editorContext.SetTarget(authoringAsset, mapData);
         }
 
         private void DrawHeader()
