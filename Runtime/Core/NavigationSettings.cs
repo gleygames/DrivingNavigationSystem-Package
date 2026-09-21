@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Gley.NavigationSystem
 {
-    public class NavigationSettings : ScriptableObject
+    public class NavigationSettings : ScriptableObject, IFormatVersioned
     {
         public const int CurrentFormatVersion = 1;
         public const int ChannelCount = 8;
@@ -18,6 +18,7 @@ namespace Gley.NavigationSystem
         public IReadOnlyList<RoadType> RoadTypes { get { return roadTypes; } }
         public float UnitsPerMeter { get { return unitsPerMeter; } }
         public int FormatVersion { get { return formatVersion; } }
+        int IFormatVersioned.CurrentFormatVersion { get { return CurrentFormatVersion; } }
         public int NextRoadTypeId { get { return nextRoadTypeId; } }
         public int Version { get { return version; } }
 

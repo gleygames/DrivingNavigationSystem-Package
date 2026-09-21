@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Gley.NavigationSystem
 {
-    public class RoadNetworkData : ScriptableObject
+    public class RoadNetworkData : ScriptableObject, IFormatVersioned
     {
         public const int CurrentFormatVersion = 1;
 
@@ -22,6 +22,7 @@ namespace Gley.NavigationSystem
         public NavigationSettings Settings { get { return settings; } }
         public float MaxSpeed { get { return maxSpeed; } }
         public int FormatVersion { get { return formatVersion; } }
+        int IFormatVersioned.CurrentFormatVersion { get { return CurrentFormatVersion; } }
         public int SourceVersion { get { return sourceVersion; } }
         public int SettingsVersion { get { return settingsVersion; } }
         public int RoadCount { get { return roads.Length; } }
