@@ -144,5 +144,10 @@ namespace Gley.NavigationSystem
         {
             return viewChannelNames[index];
         }
+
+        internal void SetFormatVersion(int value)
+        {
+            formatVersion = value;
+        }
     }
 }

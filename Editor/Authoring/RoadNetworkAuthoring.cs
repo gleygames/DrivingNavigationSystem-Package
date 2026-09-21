@@ -96,5 +96,10 @@ namespace Gley.NavigationSystem.Editor
         {
             runtimeAsset = value;
         }
+
+        internal void SetFormatVersion(int value)
+        {
+            formatVersion = value;
+        }
     }
 }
