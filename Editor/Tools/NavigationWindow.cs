@@ -44,7 +44,7 @@ namespace Gley.NavigationSystem.Editor
             validationIssues = new List<ValidationIssue>();
             editorContext = new RoadEditorContext(editorPrefs, validationIssues);
             modeNames = new string[] { "Draw", "Edit", "Connect", "Validate", "Bake" };
-            modes = new IRoadEditorMode[] { new DrawMode(editorContext), new EditMode(), new ConnectMode(), new ValidateMode(), new BakeMode() };
+            modes = new IRoadEditorMode[] { new DrawMode(editorContext), new EditMode(editorContext), new ConnectMode(editorContext), new ValidateMode(), new BakeMode() };
             frustumPlanes = new Plane[6];
             currentModeIndex = 0;
 
