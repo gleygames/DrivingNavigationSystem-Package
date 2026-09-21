@@ -95,5 +95,19 @@ namespace Gley.NavigationSystem
                 preferences.Add(other.preferences[i]);
             }
         }
+
+        internal float GetSmallestMultiplier()
+        {
+            float smallest = 1f;
+            for (int i = 0; i < typeIds.Count; i++)
+            {
+                float multiplier = GetMultiplier(typeIds[i]);
+                if (multiplier < smallest)
+                {
+                    smallest = multiplier;
+                }
+            }
+            return smallest;
+        }
     }
 }
