@@ -97,6 +97,11 @@ namespace Gley.NavigationSystem.Editor
             runtimeAsset = value;
         }
 
+        internal void SetMapAsset(MapData value)
+        {
+            mapAsset = value;
+        }
+
         internal void SetFormatVersion(int value)
         {
             formatVersion = value;
