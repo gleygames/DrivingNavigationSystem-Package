@@ -11,9 +11,18 @@ namespace Gley.NavigationSystem.Editor
         private string[] modeNames;
         private NavigationAssetLocator locator;
         private BakeStatus bakeStatus;
+        private RoadDrawPlanner drawPlanner;
+        private RoadSceneDrawer sceneDrawer;
+        private NavigationEditorPrefs editorPrefs;
         private NavigationMap targetMap;
         private RoadNetworkAuthoring authoringAsset;
+        private HashSet<int> typeFilter;
+        private List<int> visibleRoadIds;
+        private List<bool> detailedRoads;
+        private List<ValidationIssue> validationIssues;
+        private Plane[] frustumPlanes;
         private int currentModeIndex;
+        private bool showViewFoldout;
 
         [MenuItem(NavigationWindowProperties.MenuItem, false, 0)]
         private static void OpenWindow()
@@ -27,6 +36,14 @@ namespace Gley.NavigationSystem.Editor
             modes = new IRoadEditorMode[] { new DrawMode(), new EditMode(), new ConnectMode(), new ValidateMode(), new BakeMode() };
             locator = new NavigationAssetLocator();
             bakeStatus = new BakeStatus();
+            editorPrefs = new NavigationEditorPrefs();
+            drawPlanner = new RoadDrawPlanner();
+            sceneDrawer = new RoadSceneDrawer(editorPrefs);
+            typeFilter = new HashSet<int>();
+            visibleRoadIds = new List<int>();
+            detailedRoads = new List<bool>();
+            validationIssues = new List<ValidationIssue>();
+            frustumPlanes = new Plane[6];
             currentModeIndex = 0;
 
             ResolveTarget();
@@ -45,6 +62,7 @@ namespace Gley.NavigationSystem.Editor
 
             DrawHeader();
             DrawToolbar();
+            DrawViewFoldout();
 
             modes[currentModeIndex].OnWindowGUI();
         }
@@ -170,9 +188,97 @@ namespace Gley.NavigationSystem.Editor
             modes[currentModeIndex].OnEnter();
         }
 
+        private void DrawViewFoldout()
+        {
+            showViewFoldout = EditorGUILayout.Foldout(showViewFoldout, "View");
+            if (!showViewFoldout)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            EditorGUI.BeginChangeCheck();
+
+            editorPrefs.ShowRoadLines = EditorGUILayout.Toggle("Road Lines", editorPrefs.ShowRoadLines);
+            editorPrefs.ShowDirectionArrows = EditorGUILayout.Toggle("Direction Arrows", editorPrefs.ShowDirectionArrows);
+            editorPrefs.ShowRoadTypeColors = EditorGUILayout.Toggle("Road Type Colors", editorPrefs.ShowRoadTypeColors);
+            editorPrefs.ShowKeyPoints = EditorGUILayout.Toggle("Key Points", editorPrefs.ShowKeyPoints);
+            editorPrefs.ShowDenseShapePoints = EditorGUILayout.Toggle("Dense Shape Points", editorPrefs.ShowDenseShapePoints);
+            editorPrefs.ShowIntersections = EditorGUILayout.Toggle("Intersections / Connections", editorPrefs.ShowIntersections);
+            editorPrefs.ShowValidationHighlights = EditorGUILayout.Toggle("Validation Highlights", editorPrefs.ShowValidationHighlights);
+            editorPrefs.ShowMapRectangle = EditorGUILayout.Toggle("Map Rectangle", editorPrefs.ShowMapRectangle);
+            editorPrefs.ShowMapOverlay = EditorGUILayout.Toggle("Map Image Overlay", editorPrefs.ShowMapOverlay);
+
+            DrawTypeFilter();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                SceneView.RepaintAll();
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        private void DrawTypeFilter()
+        {
+            if (authoringAsset == null || authoringAsset.Settings == null)
+            {
+                return;
+            }
+
+            EditorGUILayout.LabelField("Type Filter (none = all)");
+
+            IReadOnlyList<RoadType> roadTypes = authoringAsset.Settings.RoadTypes;
+            for (int i = 0; i < roadTypes.Count; i++)
+            {
+                RoadType roadType = roadTypes[i];
+                bool isSelected = typeFilter.Contains(roadType.Id);
+                bool newSelected = EditorGUILayout.ToggleLeft(roadType.Name, isSelected);
+                if (newSelected == isSelected)
+                {
+                    continue;
+                }
+
+                if (newSelected)
+                {
+                    typeFilter.Add(roadType.Id);
+                }
+                else
+                {
+                    typeFilter.Remove(roadType.Id);
+                }
+            }
+        }
+
         private void HandleSceneGUI(SceneView sceneView)
         {
+            DrawRoadNetwork(sceneView);
             modes[currentModeIndex].OnSceneGUI(sceneView);
+        }
+
+        private void DrawRoadNetwork(SceneView sceneView)
+        {
+            if (authoringAsset == null || sceneView.camera == null)
+            {
+                return;
+            }
+
+            float unitsPerMeter = ResolveUnitsPerMeter();
+            GeometryUtility.CalculateFrustumPlanes(sceneView.camera, frustumPlanes);
+            Vector3 cameraPosition = sceneView.camera.transform.position;
+            float detailDistance = RoadDrawPlanner.DefaultDetailDistance * unitsPerMeter;
+
+            drawPlanner.Plan(authoringAsset, unitsPerMeter, frustumPlanes, cameraPosition, detailDistance, typeFilter, visibleRoadIds, detailedRoads);
+            sceneDrawer.Draw(authoringAsset, targetMap.MapData, authoringAsset.Settings, unitsPerMeter, visibleRoadIds, detailedRoads, validationIssues);
+        }
+
+        private float ResolveUnitsPerMeter()
+        {
+            if (authoringAsset.Settings == null)
+            {
+                return 1f;
+            }
+            return authoringAsset.Settings.UnitsPerMeter;
         }
 
         private void OnDisable()
