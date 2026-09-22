@@ -25,16 +25,19 @@ namespace Gley.NavigationSystem
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
         [SerializeField] private RouteStyle routeStyle;
+        [SerializeField] private EdgeShape edgeShape = EdgeShape.Rectangle;
         private NavigationManager cachedManager;
         private RectTransform content;
         private Image backgroundImage;
         private RawImage mapImage;
         private RouteLineRenderer activeRouteRenderer;
         private RouteLineRenderer previewRouteRenderer;
+        private MarkerLayer markerLayer;
         private MapFrame currentFrame;
         private Vector2 centerMap;
         [SerializeField] private float zoomMeters = 300f;
         [SerializeField] private float minZoomMeters = 50f;
+        [SerializeField] private float edgeInset = 8f;
         private float rotationDegrees;
         [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
         [SerializeField] private bool showPreview = true;
@@ -45,11 +48,16 @@ namespace Gley.NavigationSystem
         internal RawImage MapImage { get { return mapImage; } }
         internal RouteLineRenderer ActiveRouteRenderer { get { return activeRouteRenderer; } }
         internal RouteLineRenderer PreviewRouteRenderer { get { return previewRouteRenderer; } }
+        internal MarkerLayer MarkerLayer { get { return markerLayer; } }
         internal NavigationManager Manager { get { return cachedManager; } }
         internal RectTransform Viewport { get { return viewport; } }
+        internal MapFrame Frame { get { return currentFrame; } }
+        public EdgeShape EdgeShape { get { return edgeShape; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }
+        public float EdgeInset { get { return edgeInset; } }
         public float CanvasUnitsPerMeter { get { return math.ComputeScale(viewport.rect.width, zoomMeters); } }
+        public int ChannelMask { get { return channelMask; } }
 
         private void OnEnable()
         {
@@ -88,6 +96,10 @@ namespace Gley.NavigationSystem
 
             ApplyContainerPose();
             UpdateRouteLineProperties();
+            if (markerLayer != null)
+            {
+                markerLayer.UpdateMarkerLayerVisuals(deltaTime);
+            }
         }
 
         public void SetCenter(Vector2 value)
@@ -108,6 +120,21 @@ namespace Gley.NavigationSystem
         internal void SetShowPreview(bool value)
         {
             showPreview = value;
+        }
+
+        internal void SetChannelMask(int value)
+        {
+            channelMask = value;
+        }
+
+        internal void SetEdgeShape(EdgeShape value)
+        {
+            edgeShape = value;
+        }
+
+        internal void SetEdgeInset(float value)
+        {
+            edgeInset = value;
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPoint)
@@ -259,6 +286,9 @@ namespace Gley.NavigationSystem
             rectTransform.anchorMax = Vector2.one;
             rectTransform.offsetMin = Vector2.zero;
             rectTransform.offsetMax = Vector2.zero;
+
+            markerLayer = markersObject.AddComponent<MarkerLayer>();
+            markerLayer.SetView(this);
         }
 
         private NavigationManager FindManager()
