@@ -302,9 +302,15 @@ namespace Gley.NavigationSystem
         {
             offsetMatrix = new Vector4(1f, 0f, 0f, 1f);
 
-            Matrix4x4 graphicToCanvas = batchCanvas.transform.worldToLocalMatrix * transform.localToWorldMatrix;
-            Vector2 column0 = new Vector2(graphicToCanvas.m00, graphicToCanvas.m10);
-            Vector2 column1 = new Vector2(graphicToCanvas.m01, graphicToCanvas.m11);
+            Canvas root = batchCanvas.rootCanvas;
+            if (root == null)
+            {
+                root = batchCanvas;
+            }
+
+            Matrix4x4 graphicToRoot = root.transform.worldToLocalMatrix * transform.localToWorldMatrix;
+            Vector2 column0 = new Vector2(graphicToRoot.m00, graphicToRoot.m10);
+            Vector2 column1 = new Vector2(graphicToRoot.m01, graphicToRoot.m11);
             float length0 = column0.magnitude;
             float length1 = column1.magnitude;
             if (length0 < MinScale || length1 < MinScale)
@@ -312,22 +318,8 @@ namespace Gley.NavigationSystem
                 return false;
             }
 
-            float rootToBatchFactor = 1f;
-            Canvas root = batchCanvas.rootCanvas;
-            if (root != null && root != batchCanvas)
-            {
-                float batchScale = Mathf.Abs(batchCanvas.transform.lossyScale.x);
-                float rootScale = Mathf.Abs(root.transform.lossyScale.x);
-                if (batchScale < MinScale)
-                {
-                    return false;
-                }
-
-                rootToBatchFactor = rootScale / batchScale;
-            }
-
-            column0 = column0 / length0 * rootToBatchFactor;
-            column1 = column1 / length1 * rootToBatchFactor;
+            column0 = column0 / length0;
+            column1 = column1 / length1;
             offsetMatrix = new Vector4(column0.x, column1.x, column0.y, column1.y);
             return true;
         }

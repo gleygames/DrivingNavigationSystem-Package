@@ -10,30 +10,41 @@ namespace Gley.NavigationSystem
     {
         private const int MinimapChannelBit = 1 << 0;
         private const int FullMapChannelBit = 1 << 1;
+        private const int TrimModeRemove = 0;
+        private const int TrimModeFade = 1;
 
         private readonly List<Vector2> emptyPoints = new List<Vector2>();
         private readonly List<float> emptyDistances = new List<float>();
         private readonly List<bool> emptyDashed = new List<bool>();
+        private readonly List<Vector2> linePoints = new List<Vector2>();
+        private readonly List<float> lineDistances = new List<float>();
+        private readonly List<bool> lineDashed = new List<bool>();
         private readonly MapViewMath math = new MapViewMath();
+        private readonly RouteLineData routeLineData = new RouteLineData();
 
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
+        [SerializeField] private RouteStyle routeStyle;
         private NavigationManager cachedManager;
         private RectTransform content;
         private Image backgroundImage;
         private RawImage mapImage;
-        private RouteLineRenderer route;
+        private RouteLineRenderer activeRouteRenderer;
+        private RouteLineRenderer previewRouteRenderer;
         private MapFrame currentFrame;
         private Vector2 centerMap;
         [SerializeField] private float zoomMeters = 300f;
         [SerializeField] private float minZoomMeters = 50f;
         private float rotationDegrees;
         [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
+        [SerializeField] private bool showPreview = true;
         private bool hierarchyBuilt;
 
         public Vector2 CenterMap { get { return centerMap; } }
         internal Image BackgroundImage { get { return backgroundImage; } }
         internal RawImage MapImage { get { return mapImage; } }
+        internal RouteLineRenderer ActiveRouteRenderer { get { return activeRouteRenderer; } }
+        internal RouteLineRenderer PreviewRouteRenderer { get { return previewRouteRenderer; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }
         public float CanvasUnitsPerMeter { get { return math.ComputeScale(viewport.rect.width, zoomMeters); } }
@@ -50,6 +61,14 @@ namespace Gley.NavigationSystem
 
             cachedManager = found;
             found.MapChanged += HandleMapChanged;
+            found.NavigationStarted += HandleNavigationStarted;
+            found.Rerouted += HandleRerouted;
+            found.Arrived += HandleArrived;
+            found.NavigationStopped += HandleNavigationStopped;
+            found.RouteFailed += HandleRouteFailed;
+            found.PreviewReady += HandlePreviewReady;
+            found.PreviewFailed += HandlePreviewFailed;
+            found.PreviewCanceled += HandlePreviewCanceled;
             HandleMapChanged(found.ActiveMap);
         }
 
@@ -66,6 +85,7 @@ namespace Gley.NavigationSystem
             }
 
             ApplyContainerPose();
+            UpdateRouteLineProperties();
         }
 
         public void SetCenter(Vector2 value)
@@ -81,6 +101,11 @@ namespace Gley.NavigationSystem
         public void SetZoomMeters(float meters, float maxZoomMeters)
         {
             zoomMeters = Mathf.Clamp(meters, minZoomMeters, maxZoomMeters);
+        }
+
+        internal void SetShowPreview(bool value)
+        {
+            showPreview = value;
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPoint)
@@ -136,8 +161,9 @@ namespace Gley.NavigationSystem
             CreateBackground();
             CreateContent();
             CreateMapImage();
-            CreateRoute();
+            CreateRouteRenderers();
             CreateMarkers();
+            ApplyRouteStyle();
             hierarchyBuilt = true;
         }
 
@@ -182,9 +208,15 @@ namespace Gley.NavigationSystem
             mapImage.raycastTarget = false;
         }
 
-        private void CreateRoute()
+        private void CreateRouteRenderers()
         {
-            GameObject routeObject = new GameObject("Route", typeof(RectTransform));
+            activeRouteRenderer = CreateRouteRenderer("ActiveRoute");
+            previewRouteRenderer = CreateRouteRenderer("PreviewRoute");
+        }
+
+        private RouteLineRenderer CreateRouteRenderer(string objectName)
+        {
+            GameObject routeObject = new GameObject(objectName, typeof(RectTransform));
             routeObject.transform.SetParent(content, false);
 
             RectTransform rectTransform = routeObject.GetComponent<RectTransform>();
@@ -193,7 +225,26 @@ namespace Gley.NavigationSystem
             rectTransform.pivot = Vector2.zero;
             rectTransform.anchoredPosition = Vector2.zero;
 
-            route = routeObject.AddComponent<RouteLineRenderer>();
+            return routeObject.AddComponent<RouteLineRenderer>();
+        }
+
+        private void ApplyRouteStyle()
+        {
+            if (routeStyle == null)
+            {
+                return;
+            }
+
+            int trimMode = TrimModeRemove;
+            if (routeStyle.DrivenMode == RouteDrivenMode.Faded)
+            {
+                trimMode = TrimModeFade;
+            }
+
+            activeRouteRenderer.SetStyle(routeStyle.ActiveLineColor, routeStyle.ActiveOutlineColor, routeStyle.FadedColor, routeStyle.HalfWidth, routeStyle.OutlineWidth, routeStyle.DashLength, routeStyle.GapLength, trimMode);
+            previewRouteRenderer.SetStyle(routeStyle.PreviewLineColor, routeStyle.PreviewOutlineColor, routeStyle.FadedColor, routeStyle.HalfWidth, routeStyle.OutlineWidth, routeStyle.DashLength, routeStyle.GapLength, TrimModeRemove);
+            activeRouteRenderer.SetShader(routeStyle.LineShader);
+            previewRouteRenderer.SetShader(routeStyle.LineShader);
         }
 
         private void CreateMarkers()
@@ -226,7 +277,8 @@ namespace Gley.NavigationSystem
             if (map == null || map.MapData == null)
             {
                 currentFrame = null;
-                ClearRouteDisplay();
+                ClearActiveLine();
+                ClearPreviewLine();
                 return;
             }
 
@@ -235,12 +287,90 @@ namespace Gley.NavigationSystem
             mapImage.rectTransform.sizeDelta = data.RectangleSize;
             backgroundImage.color = data.OutsideMapColor;
             currentFrame = data.CreateFrame();
-            ClearRouteDisplay();
+            ClearActiveLine();
+            ClearPreviewLine();
         }
 
-        private void ClearRouteDisplay()
+        private void HandleNavigationStarted(Route route)
         {
-            route.SetLine(emptyPoints, emptyDistances, emptyDashed);
+            RebuildActiveLine(route);
+            ClearPreviewLine();
+        }
+
+        private void HandleRerouted(Route route, RerouteReason reason)
+        {
+            RebuildActiveLine(route);
+        }
+
+        private void HandleArrived()
+        {
+            ClearActiveLine();
+            ClearPreviewLine();
+        }
+
+        private void HandleNavigationStopped(StopReason reason)
+        {
+            ClearActiveLine();
+        }
+
+        private void HandleRouteFailed(FailureReason reason)
+        {
+            if (!cachedManager.HasActiveRoute)
+            {
+                ClearActiveLine();
+            }
+        }
+
+        private void HandlePreviewReady(Route route, MapMarker marker)
+        {
+            if (!showPreview)
+            {
+                return;
+            }
+
+            RebuildPreviewLine(route);
+        }
+
+        private void HandlePreviewFailed(FailureReason reason)
+        {
+            ClearPreviewLine();
+        }
+
+        private void HandlePreviewCanceled()
+        {
+            ClearPreviewLine();
+        }
+
+        private void RebuildActiveLine(Route route)
+        {
+            if (currentFrame == null)
+            {
+                return;
+            }
+
+            routeLineData.Convert(route, currentFrame, linePoints, lineDistances, lineDashed);
+            activeRouteRenderer.SetLine(linePoints, lineDistances, lineDashed);
+        }
+
+        private void RebuildPreviewLine(Route route)
+        {
+            if (currentFrame == null)
+            {
+                return;
+            }
+
+            routeLineData.Convert(route, currentFrame, linePoints, lineDistances, lineDashed);
+            previewRouteRenderer.SetLine(linePoints, lineDistances, lineDashed);
+        }
+
+        private void ClearActiveLine()
+        {
+            activeRouteRenderer.SetLine(emptyPoints, emptyDistances, emptyDashed);
+        }
+
+        private void ClearPreviewLine()
+        {
+            previewRouteRenderer.SetLine(emptyPoints, emptyDistances, emptyDashed);
         }
 
         private void ApplyContainerPose()
@@ -254,6 +384,18 @@ namespace Gley.NavigationSystem
         private MapViewPose ComputePose()
         {
             return math.ComputeContainerPose(centerMap, rotationDegrees, CanvasUnitsPerMeter, Vector2.zero);
+        }
+
+        private void UpdateRouteLineProperties()
+        {
+            float unitsPerMeter = CanvasUnitsPerMeter;
+            activeRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
+            previewRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
+
+            if (cachedManager != null)
+            {
+                activeRouteRenderer.SetTrimDistance(cachedManager.TrimDistance);
+            }
         }
 
         private Camera GetEventCamera()
@@ -281,6 +423,14 @@ namespace Gley.NavigationSystem
             }
 
             cachedManager.MapChanged -= HandleMapChanged;
+            cachedManager.NavigationStarted -= HandleNavigationStarted;
+            cachedManager.Rerouted -= HandleRerouted;
+            cachedManager.Arrived -= HandleArrived;
+            cachedManager.NavigationStopped -= HandleNavigationStopped;
+            cachedManager.RouteFailed -= HandleRouteFailed;
+            cachedManager.PreviewReady -= HandlePreviewReady;
+            cachedManager.PreviewFailed -= HandlePreviewFailed;
+            cachedManager.PreviewCanceled -= HandlePreviewCanceled;
             cachedManager = null;
         }
     }

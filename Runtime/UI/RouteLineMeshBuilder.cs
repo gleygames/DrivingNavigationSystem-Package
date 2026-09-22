@@ -9,6 +9,7 @@ namespace Gley.NavigationSystem
         private const float MinPointDistance = 0.0001f;
         private const float MiterLimit = 2f;
         private const float ZeroSumThreshold = 0.000001f;
+        private const float BoundsPadding = 0.05f;
 
         private readonly List<Vector2> _keptPoints;
         private readonly List<Vector2> _segmentNormals;
@@ -185,7 +186,7 @@ namespace Gley.NavigationSystem
             }
 
             UIVertex left = new UIVertex();
-            left.position = new Vector3(position.x, position.y, 0f);
+            left.position = new Vector3(position.x + offset.x * BoundsPadding, position.y + offset.y * BoundsPadding, 0f);
             left.color = Color.white;
             left.uv0 = new Vector2(distance, -1f);
             left.uv1 = offset;
@@ -193,7 +194,7 @@ namespace Gley.NavigationSystem
             outVertices.Add(left);
 
             UIVertex right = new UIVertex();
-            right.position = new Vector3(position.x, position.y, 0f);
+            right.position = new Vector3(position.x - offset.x * BoundsPadding, position.y - offset.y * BoundsPadding, 0f);
             right.color = Color.white;
             right.uv0 = new Vector2(distance, 1f);
             right.uv1 = -offset;
