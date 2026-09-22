@@ -5,7 +5,7 @@ namespace Gley.NavigationSystem
 {
     [DefaultExecutionOrder(99)]
     [RequireComponent(typeof(MapView))]
-    public class MapViewInteractive : MonoBehaviour
+    public class MapViewInteractive : MonoBehaviour, IMapGestureTarget
     {
         private readonly FullMapMath math = new FullMapMath();
 
@@ -109,6 +109,10 @@ namespace Gley.NavigationSystem
             Vector2 desiredCenter = math.ZoomAroundPivot(view.CenterMap, pivotMap, oldZoom, requestedZoom);
             view.SetZoomMeters(requestedZoom, ComputeMaxZoomMeters(activeManager));
             ApplyClampedCenter(desiredCenter, activeManager.Frame.Size);
+        }
+
+        public void Tap(Vector2 pos)
+        {
         }
 
         public void SetZoomMeters(float meters)
