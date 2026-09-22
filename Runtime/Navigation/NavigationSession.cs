@@ -133,6 +133,25 @@ namespace Gley.NavigationSystem
             UpdateRemainingAndEta();
         }
 
+        public bool IsRoadOnRoute(int roadIndex, bool movingForward)
+        {
+            if (route == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < route.Segments.Count; i++)
+            {
+                RouteSegment segment = route.Segments[i];
+                if (segment.RoadIndex == roadIndex && segment.Forward == movingForward)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void Stop()
         {
             route = null;
