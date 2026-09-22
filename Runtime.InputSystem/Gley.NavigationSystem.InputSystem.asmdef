@@ -1,0 +1,25 @@
+{
+    "name": "Gley.NavigationSystem.InputSystem",
+    "rootNamespace": "Gley.NavigationSystem.InputSystem",
+    "references": [
+        "Gley.NavigationSystem",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "GLEY_NAV_INPUTSYSTEM"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "GLEY_NAV_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -24,6 +24,7 @@ namespace Gley.NavigationSystem
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            target.NotifyPointerInput();
             tracker.PointerDown(eventData.pointerId, ToViewportLocal(eventData), Time.unscaledTime);
         }
 
@@ -53,6 +54,7 @@ namespace Gley.NavigationSystem
 
         public void OnScroll(PointerEventData eventData)
         {
+            target.NotifyPointerInput();
             tracker.MouseWheelStep = target.MouseWheelStep;
             tracker.Scroll(eventData.scrollDelta.y, ToViewportLocal(eventData));
         }
