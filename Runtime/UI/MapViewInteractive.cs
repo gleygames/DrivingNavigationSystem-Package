@@ -15,6 +15,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private float openZoomMeters = 1000f;
         [SerializeField] private float mouseWheelStep = 1.25f;
         [SerializeField] private float doubleTapStep = 2f;
+        [SerializeField] private float markerTapRadius = 40f;
         [SerializeField] private bool confirmStep = true;
         private bool isFollowingCar;
         private bool needsSnap = true;
@@ -27,6 +28,7 @@ namespace Gley.NavigationSystem
         public float OpenZoomMeters { get { return openZoomMeters; } }
         public float MouseWheelStep { get { return mouseWheelStep; } }
         public float DoubleTapStep { get { return doubleTapStep; } }
+        public float MarkerTapRadius { get { return markerTapRadius; } }
         public bool ConfirmStep { get { return confirmStep; } }
         public bool IsFollowingCar { get { return isFollowingCar; } }
 
@@ -113,6 +115,40 @@ namespace Gley.NavigationSystem
 
         public void Tap(Vector2 pos)
         {
+            TapAt(pos);
+        }
+
+        public void TapAt(Vector2 screenPoint)
+        {
+            NavigationManager activeManager = ResolveManagerWithFrame();
+            if (activeManager == null)
+            {
+                return;
+            }
+
+            MapMarker marker = null;
+            Vector3 worldPoint;
+            MarkerLayer markerLayer = view.MarkerLayer;
+            Vector3 markerTruePosition;
+            if (markerLayer != null && markerLayer.FindNearestDestinationMarker(screenPoint, markerTapRadius, out marker, out markerTruePosition))
+            {
+                worldPoint = activeManager.Converter.TrueToWorld(markerTruePosition);
+            }
+            else
+            {
+                Vector2 mapPoint = view.ViewportToMap(screenPoint);
+                Vector3 truePoint = activeManager.Frame.MapToTrue(mapPoint, activeManager.Frame.Center.y);
+                worldPoint = activeManager.Converter.TrueToWorld(truePoint);
+            }
+
+            if (confirmStep)
+            {
+                activeManager.PreviewDestination(worldPoint, marker);
+            }
+            else
+            {
+                activeManager.StartNavigation(worldPoint, marker);
+            }
         }
 
         public void SetZoomMeters(float meters)
@@ -165,6 +201,11 @@ namespace Gley.NavigationSystem
         internal void SetDoubleTapStep(float value)
         {
             doubleTapStep = value;
+        }
+
+        internal void SetMarkerTapRadius(float value)
+        {
+            markerTapRadius = value;
         }
 
         internal void SetConfirmStep(bool value)

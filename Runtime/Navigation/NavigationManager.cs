@@ -48,6 +48,7 @@ namespace Gley.NavigationSystem
         private NavigationFormatter ownedFormatter;
         private Vector3 activeDestination;
         private Vector3 previewDestination;
+        private MapMarker previewMarker;
         [SerializeField] private float carYawOffset;
         [SerializeField] private float avoidMultiplier = 5f;
         [SerializeField] private float preferMultiplier = 0.7f;
@@ -330,12 +331,22 @@ namespace Gley.NavigationSystem
 
         public void PreviewDestination(Vector3 worldPoint)
         {
-            RunOrQueue(new NavigationCommand(NavigationCommandType.PreviewDestination, null, null, worldPoint, 0f, 0, 0));
+            PreviewDestination(worldPoint, null);
+        }
+
+        internal void PreviewDestination(Vector3 worldPoint, MapMarker marker)
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.PreviewDestination, worldPoint, marker));
         }
 
         public void StartNavigation(Vector3 worldPoint)
         {
-            RunOrQueue(new NavigationCommand(NavigationCommandType.StartNavigation, null, null, worldPoint, 0f, 0, 0));
+            StartNavigation(worldPoint, null);
+        }
+
+        internal void StartNavigation(Vector3 worldPoint, MapMarker marker)
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.StartNavigation, worldPoint, marker));
         }
 
         public void ConfirmPreview()
@@ -967,7 +978,7 @@ namespace Gley.NavigationSystem
 
             SwapPreviewRoute();
             AddOrMovePreviewMarker(previewDestination);
-            RaisePreviewReady(previewRoute, null);
+            RaisePreviewReady(previewRoute, previewMarker);
         }
 
         private void RaisePreviewFailed(FailureReason failure)
@@ -1320,10 +1331,10 @@ namespace Gley.NavigationSystem
                     ExecuteSetCar(command.Car, command.FloatValue);
                     break;
                 case NavigationCommandType.PreviewDestination:
-                    ExecutePreviewDestination(command.Point);
+                    ExecutePreviewDestination(command.Point, command.Marker);
                     break;
                 case NavigationCommandType.StartNavigation:
-                    ExecuteStartNavigation(command.Point);
+                    ExecuteStartNavigation(command.Point, command.Marker);
                     break;
                 case NavigationCommandType.ConfirmPreview:
                     ExecuteConfirmPreview();
@@ -1407,13 +1418,14 @@ namespace Gley.NavigationSystem
             }
         }
 
-        private void ExecutePreviewDestination(Vector3 worldPoint)
+        private void ExecutePreviewDestination(Vector3 worldPoint, MapMarker marker)
         {
             Vector3 trueDestination = WorldPointToTrue(worldPoint);
             FailureReason failure = FindCarRoute(trueDestination);
             if (failure != FailureReason.None)
             {
                 hasPreview = false;
+                previewMarker = null;
                 RemovePreviewMarker();
                 RaisePreviewFailed(failure);
                 return;
@@ -1421,9 +1433,10 @@ namespace Gley.NavigationSystem
 
             SwapPreviewRoute();
             previewDestination = trueDestination;
+            previewMarker = marker;
             hasPreview = true;
             AddOrMovePreviewMarker(previewDestination);
-            RaisePreviewReady(previewRoute, null);
+            RaisePreviewReady(previewRoute, marker);
         }
 
         private Vector3 WorldPointToTrue(Vector3 worldPoint)
@@ -1432,7 +1445,7 @@ namespace Gley.NavigationSystem
             return converter.WorldToTrue(worldPoint);
         }
 
-        private void ExecuteStartNavigation(Vector3 worldPoint)
+        private void ExecuteStartNavigation(Vector3 worldPoint, MapMarker marker)
         {
             Vector3 trueDestination = WorldPointToTrue(worldPoint);
             FailureReason failure = FindCarRoute(trueDestination);

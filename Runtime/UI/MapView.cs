@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -214,6 +214,7 @@ namespace Gley.NavigationSystem
             CreateRouteRenderers();
             CreateMarkers();
             ApplyRouteStyle();
+            SortGeneratedHierarchy();
             hierarchyBuilt = true;
         }
 
@@ -310,6 +311,13 @@ namespace Gley.NavigationSystem
 
             markerLayer = markersObject.AddComponent<MarkerLayer>();
             markerLayer.SetView(this);
+        }
+
+        private void SortGeneratedHierarchy()
+        {
+            backgroundImage.transform.SetSiblingIndex(0);
+            content.SetSiblingIndex(1);
+            markerLayer.transform.SetSiblingIndex(2);
         }
 
         private NavigationManager FindManager()

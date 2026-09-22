@@ -143,6 +143,46 @@ namespace Gley.NavigationSystem
             return null;
         }
 
+        internal bool FindNearestDestinationMarker(Vector2 viewportPoint, float radius, out MapMarker marker, out Vector3 truePosition)
+        {
+            marker = null;
+            truePosition = Vector3.zero;
+
+            if (view == null || view.Manager == null || view.Frame == null)
+            {
+                return false;
+            }
+
+            MarkerRegistry markers = view.Manager.Markers;
+            MapFrame frame = view.Frame;
+            float bestDistanceSq = radius * radius;
+            bool found = false;
+
+            for (int i = 0; i < currentVisible.Count; i++)
+            {
+                MarkerEntry entry = markers.GetEntry(currentVisible[i]);
+                if (entry.Marker == null || !entry.CanBeDestination)
+                {
+                    continue;
+                }
+
+                Vector2 mapPoint = frame.TrueToMap(entry.TruePosition);
+                Vector2 candidatePoint = view.MapToViewport(mapPoint);
+                float distanceSq = (candidatePoint - viewportPoint).sqrMagnitude;
+                if (distanceSq > bestDistanceSq)
+                {
+                    continue;
+                }
+
+                bestDistanceSq = distanceSq;
+                marker = entry.Marker;
+                truePosition = entry.TruePosition;
+                found = true;
+            }
+
+            return found;
+        }
+
         private void EnsureFollowCarReference()
         {
             if (followCar != null || view == null)

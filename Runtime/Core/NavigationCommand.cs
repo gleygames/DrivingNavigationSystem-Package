@@ -23,6 +23,11 @@ namespace Gley.NavigationSystem
         {
         }
 
+        public NavigationCommand(NavigationCommandType type, Vector3 point, MapMarker marker)
+            : this(type, null, null, marker, point, 0f, 0, 0)
+        {
+        }
+
         private NavigationCommand(NavigationCommandType type, NavigationMap map, Transform car, MapMarker marker, Vector3 point, float floatValue, int intValue, int enumValue)
         {
             Type = type;

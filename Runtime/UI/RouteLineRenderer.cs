@@ -150,6 +150,7 @@ namespace Gley.NavigationSystem
             graphicObject.transform.SetParent(transform, false);
 
             RectTransform rectTransform = graphicObject.GetComponent<RectTransform>();
+            rectTransform.pivot = Vector2.zero;
             rectTransform.anchorMin = Vector2.zero;
             rectTransform.anchorMax = Vector2.one;
             rectTransform.offsetMin = Vector2.zero;
