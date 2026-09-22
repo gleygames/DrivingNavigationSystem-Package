@@ -68,9 +68,12 @@ namespace Gley.NavigationSystem.Editor
                 output.Add("Image size " + width + " x " + height + " is not a multiple of 4. Compression may add borders or blur.");
             }
 
-            if (importer.npotScale != TextureImporterNPOTScale.None)
+            if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height))
             {
-                output.Add("Non Power of 2 scaling is on. Unity will rescale the image and it may no longer line up with the roads. Set it to None.");
+                if (importer.npotScale != TextureImporterNPOTScale.None)
+                {
+                    output.Add("Non Power of 2 scaling is on. Unity will rescale the image and it may no longer line up with the roads. Set it to None.");
+                }
             }
 
             if (!importer.mipmapEnabled)
@@ -92,6 +95,15 @@ namespace Gley.NavigationSystem.Editor
                 size *= 2;
             }
             return size;
+        }
+
+        private bool IsPowerOfTwo(int value)
+        {
+            if (value <= 0)
+            {
+                return false;
+            }
+            return (value & (value - 1)) == 0;
         }
 
         private bool HasMobileSizeAbove4096(TextureImporter importer)

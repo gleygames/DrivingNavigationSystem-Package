@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -11,7 +12,13 @@ namespace Gley.NavigationSystem.Editor
         private const int MinLongerSidePixels = 4;
         private const int MaxOverlapPx = 256;
 
+        private readonly string[] templateSizeLabels;
+        private readonly int[] templateSizeValues;
         private readonly MapCaptureExecutor executor;
+        private readonly MapImageImportSettings importSettings;
+        private readonly CustomImageAssigner customImageAssigner;
+        private readonly TemplateExporter templateExporter;
+        private readonly CapturePlanner planner;
         private readonly NavigationEditorPrefs prefs;
         private readonly CaptureSettings settings;
 
@@ -19,13 +26,20 @@ namespace Gley.NavigationSystem.Editor
         private Texture2D previewTexture;
         private ICapturePipelineAdapter adapter;
         private float pendingUnitsPerMeter;
+        private int templateSizeIndex;
         private bool disposed;
 
         public MapImagePanel(NavigationEditorPrefs prefs)
         {
             this.prefs = prefs;
             executor = new MapCaptureExecutor();
+            importSettings = new MapImageImportSettings();
+            customImageAssigner = new CustomImageAssigner();
+            templateExporter = new TemplateExporter();
+            planner = new CapturePlanner();
             settings = new CaptureSettings();
+            templateSizeLabels = new string[] { "2048 px", "4096 px" };
+            templateSizeValues = new int[] { 2048, 4096 };
 
             string json = prefs.CaptureSettingsJson;
             if (!string.IsNullOrEmpty(json))
@@ -56,6 +70,12 @@ namespace Gley.NavigationSystem.Editor
             DrawPreview(data, unitsPerMeter);
             DrawCaptureButton(data, unitsPerMeter);
             DrawChangeAreaButton(data);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Custom Image", EditorStyles.boldLabel);
+            DrawCustomImageField(data);
+            DrawGuidance(data);
+            DrawTemplateExport(data);
         }
 
         private void EnsureAdapter()
@@ -255,6 +275,77 @@ namespace Gley.NavigationSystem.Editor
             data.SetLocked(false);
             data.SetImageState(MapImageState.Outdated);
             EditorUtility.SetDirty(data);
+        }
+
+        private void DrawCustomImageField(MapData data)
+        {
+            EditorGUI.BeginChangeCheck();
+            Texture2D newImage = (Texture2D)EditorGUILayout.ObjectField("Assign custom image", data.Image, typeof(Texture2D), false);
+            if (EditorGUI.EndChangeCheck() && newImage != null)
+            {
+                customImageAssigner.Assign(data, newImage);
+            }
+
+            if (data.Image != null)
+            {
+                DrawImportWarnings(data.Image);
+            }
+        }
+
+        private void DrawImportWarnings(Texture2D image)
+        {
+            string assetPath = AssetDatabase.GetAssetPath(image);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                return;
+            }
+
+            List<string> warnings = new List<string>();
+            importSettings.GetWarnings(assetPath, warnings);
+            for (int i = 0; i < warnings.Count; i++)
+            {
+                EditorGUILayout.HelpBox(warnings[i], MessageType.Warning);
+            }
+        }
+
+        private void DrawGuidance(MapData data)
+        {
+            ImageGuidance guidance = customImageAssigner.GetGuidance(data);
+            EditorGUILayout.LabelField("Ratio", guidance.RatioText);
+            DrawRecommendedSize("2048 px", guidance.Recommended2048);
+            DrawRecommendedSize("4096 px", guidance.Recommended4096);
+        }
+
+        private void DrawRecommendedSize(string label, ImageSizePlan plan)
+        {
+            string text = plan.WidthPx + " x " + plan.HeightPx + " (" + plan.MetersPerPixel.ToString("0.###") + " m/px)";
+            EditorGUILayout.LabelField(label, text);
+        }
+
+        private void DrawTemplateExport(MapData data)
+        {
+            templateSizeIndex = EditorGUILayout.Popup("Template Size", templateSizeIndex, templateSizeLabels);
+
+            if (!GUILayout.Button("Export Template"))
+            {
+                return;
+            }
+
+            string path = templateExporter.GetTemplatePath(data);
+            if (string.IsNullOrEmpty(path))
+            {
+                EditorUtility.DisplayDialog("Export Template", "Save the map asset to disk first.", "OK");
+                return;
+            }
+            if (data.RoadNetwork == null)
+            {
+                EditorUtility.DisplayDialog("Export Template", "Bake the road network first.", "OK");
+                return;
+            }
+
+            ImageSizePlan plan = planner.PlanImageSize(data.RectangleSize, templateSizeValues[templateSizeIndex]);
+            templateExporter.Export(data, data.RoadNetwork, plan, path);
+            AssetDatabase.Refresh();
         }
 
         public void Dispose()
