@@ -6,7 +6,7 @@ namespace Gley.NavigationSystem
     public class MinimapTapToOpen : MonoBehaviour, IPointerClickHandler
     {
         [SerializeField] private MinimapTapAction tapAction = MinimapTapAction.OpenFullMap;
-        [SerializeField] private GameObject fullMap;
+        [SerializeField] private MapViewInteractive fullMap;
 
         public MinimapTapAction TapAction { get { return tapAction; } }
 
@@ -15,7 +15,7 @@ namespace Gley.NavigationSystem
             tapAction = value;
         }
 
-        public void SetFullMap(GameObject value)
+        public void SetFullMap(MapViewInteractive value)
         {
             fullMap = value;
         }
@@ -32,7 +32,7 @@ namespace Gley.NavigationSystem
                 return;
             }
 
-            fullMap.SetActive(true);
+            fullMap.Open();
         }
     }
 }
