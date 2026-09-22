@@ -1,0 +1,30 @@
+{
+    "name": "Gley.NavigationSystem.TMP",
+    "rootNamespace": "Gley.NavigationSystem.TMP",
+    "references": [
+        "Gley.NavigationSystem",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "GLEY_NAV_TMP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "",
+            "define": "GLEY_NAV_TMP"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "GLEY_NAV_TMP"
+        }
+    ],
+    "noEngineReferences": false
+}

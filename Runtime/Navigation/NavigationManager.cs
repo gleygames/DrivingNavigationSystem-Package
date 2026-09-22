@@ -20,6 +20,7 @@ namespace Gley.NavigationSystem
         private readonly RouteRequest generalRequest = new RouteRequest();
 
         [SerializeField] private NavigationSettings settings;
+        [SerializeField] private NavigationFormatter formatter;
         [SerializeField] private NavigationMap explicitMap;
         [SerializeField] private Transform car;
         [SerializeField] private ShiftSource shiftSource = ShiftSource.Rectangle;
@@ -37,6 +38,7 @@ namespace Gley.NavigationSystem
         private Route activeRoute;
         private Route previewRoute;
         private Route scratchRoute;
+        private NavigationFormatter ownedFormatter;
         private Vector3 activeDestination;
         private Vector3 previewDestination;
         [SerializeField] private float carYawOffset;
@@ -142,6 +144,7 @@ namespace Gley.NavigationSystem
                 return 0f;
             }
         }
+        public NavigationFormatter Formatter { get { return formatter; } }
         public int CurrentRoadId { get; private set; } = -1;
         public bool IsInitialized { get; private set; }
         public bool IsOffRoad { get; private set; }
@@ -207,6 +210,8 @@ namespace Gley.NavigationSystem
                 CustomLogger.LogWarning("NavigationManager: no Navigation Settings assigned, using 1 unit per meter.", this);
             }
 
+            EnsureFormatter();
+
             motion.TeleportDistance = teleportDistance;
             motion.StoppedSpeed = stoppedSpeed;
             motion.MinHeadingSpeed = minHeadingSpeed;
@@ -243,6 +248,33 @@ namespace Gley.NavigationSystem
             finally
             {
                 EndDispatch();
+            }
+        }
+
+        private void EnsureFormatter()
+        {
+            if (formatter == null)
+            {
+                AssignDefaultFormatter();
+            }
+        }
+
+        private void AssignDefaultFormatter()
+        {
+            DestroyOwnedFormatter();
+
+            DefaultNavigationFormatter defaultFormatter = ScriptableObject.CreateInstance<DefaultNavigationFormatter>();
+            defaultFormatter.SetSettings(settings);
+            ownedFormatter = defaultFormatter;
+            formatter = defaultFormatter;
+        }
+
+        private void DestroyOwnedFormatter()
+        {
+            if (ownedFormatter != null)
+            {
+                Destroy(ownedFormatter);
+                ownedFormatter = null;
             }
         }
 
@@ -354,6 +386,18 @@ namespace Gley.NavigationSystem
             {
                 callback(result);
             }
+        }
+
+        public void SetFormatter(NavigationFormatter value)
+        {
+            if (value == null)
+            {
+                AssignDefaultFormatter();
+                return;
+            }
+
+            DestroyOwnedFormatter();
+            formatter = value;
         }
 
         internal void RegisterMap(NavigationMap map)
@@ -1373,6 +1417,7 @@ namespace Gley.NavigationSystem
         private void OnDestroy()
         {
             commandQueue.Clear();
+            DestroyOwnedFormatter();
         }
     }
 }
