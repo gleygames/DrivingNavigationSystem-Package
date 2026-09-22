@@ -26,6 +26,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private RectTransform viewport;
         [SerializeField] private RouteStyle routeStyle;
         [SerializeField] private EdgeShape edgeShape = EdgeShape.Rectangle;
+        [SerializeField] private GameObject arrowPrefab;
         private NavigationManager cachedManager;
         private RectTransform content;
         private Image backgroundImage;
@@ -41,6 +42,8 @@ namespace Gley.NavigationSystem
         private float rotationDegrees;
         [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
         [SerializeField] private bool showPreview = true;
+        [SerializeField] private bool showOffScreenArrows = true;
+        [SerializeField] private bool showArrowDistance = true;
         private bool hierarchyBuilt;
 
         public Vector2 CenterMap { get { return centerMap; } }
@@ -53,11 +56,14 @@ namespace Gley.NavigationSystem
         internal RectTransform Viewport { get { return viewport; } }
         internal MapFrame Frame { get { return currentFrame; } }
         public EdgeShape EdgeShape { get { return edgeShape; } }
+        internal GameObject ArrowPrefab { get { return arrowPrefab; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }
         public float EdgeInset { get { return edgeInset; } }
         public float CanvasUnitsPerMeter { get { return math.ComputeScale(viewport.rect.width, zoomMeters); } }
         public int ChannelMask { get { return channelMask; } }
+        public bool ShowOffScreenArrows { get { return showOffScreenArrows; } }
+        public bool ShowArrowDistance { get { return showArrowDistance; } }
 
         private void OnEnable()
         {
@@ -135,6 +141,21 @@ namespace Gley.NavigationSystem
         internal void SetEdgeInset(float value)
         {
             edgeInset = value;
+        }
+
+        internal void SetArrowPrefab(GameObject value)
+        {
+            arrowPrefab = value;
+        }
+
+        internal void SetShowOffScreenArrows(bool value)
+        {
+            showOffScreenArrows = value;
+        }
+
+        internal void SetShowArrowDistance(bool value)
+        {
+            showArrowDistance = value;
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPoint)
