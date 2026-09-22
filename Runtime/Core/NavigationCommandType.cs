@@ -11,6 +11,8 @@ namespace Gley.NavigationSystem
         StopNavigation,
         SetRouteMode,
         SetRoadTypePreference,
-        SetUTurnRule
+        SetUTurnRule,
+        AddMarker,
+        RemoveMarker
     }
 }

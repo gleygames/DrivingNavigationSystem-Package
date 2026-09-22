@@ -11,6 +11,8 @@ namespace Gley.NavigationSystem
         private const float RotationTolerance = 0.01f;
         private const float MinHeadingLength = 0.0001f;
         private const float RoadHeadingFlipDot = -0.25f;
+        private const int MinimapChannelBit = 1 << 0;
+        private const int FullMapChannelBit = 1 << 1;
 
         private readonly List<NavigationMap> registeredMaps = new List<NavigationMap>();
         private readonly WorldConverter converter = new WorldConverter();
@@ -19,11 +21,15 @@ namespace Gley.NavigationSystem
         private readonly RoutePreferences preferences = new RoutePreferences();
         private readonly RouteRequest carRequest = new RouteRequest();
         private readonly RouteRequest generalRequest = new RouteRequest();
+        private readonly MarkerRegistry markers = new MarkerRegistry();
 
         [SerializeField] private NavigationSettings settings;
         [SerializeField] private NavigationFormatter formatter;
         [SerializeField] private NavigationMap explicitMap;
         [SerializeField] private Transform car;
+        [SerializeField] private GameObject playerMarkerPrefab;
+        [SerializeField] private GameObject destinationMarkerPrefab;
+        [SerializeField] private GameObject previewPinPrefab;
         [SerializeField] private ShiftSource shiftSource = ShiftSource.Rectangle;
         [SerializeField] private RouteMode routeMode = RouteMode.Shortest;
         [SerializeField] private UTurnRule uTurnRule = UTurnRule.Never;
@@ -58,6 +64,8 @@ namespace Gley.NavigationSystem
         private float roadHeadingSign = 1f;
         private int dispatchDepth;
         private int roadHeadingRoadIndex = -1;
+        private int destinationMarkerIndex = -1;
+        private int previewMarkerIndex = -1;
         [SerializeField] private bool startManually;
         private bool carNeedsReset;
         private bool severalMapsWarned;
@@ -108,6 +116,9 @@ namespace Gley.NavigationSystem
             }
         }
         internal WorldConverter Converter { get { return converter; } }
+        internal MarkerRegistry Markers { get { return markers; } }
+        internal int DestinationMarkerIndex { get { return destinationMarkerIndex; } }
+        internal int PreviewMarkerIndex { get { return previewMarkerIndex; } }
         internal MapFrame Frame { get; private set; }
         internal RerouteReason LastRerouteDecision { get; private set; }
         public Vector3 NoseHeading { get { return motion.NoseHeading; } }
@@ -187,6 +198,7 @@ namespace Gley.NavigationSystem
                     UpdateShiftLogic();
                     UpdateCarLogic(deltaTime);
                     UpdateTrackingLogic();
+                    UpdateMarkerRegistryLogic();
                     UpdateRouteLogic();
                     UpdatePreviewLogic();
                     UpdateOutsideMapLogic();
@@ -246,6 +258,15 @@ namespace Gley.NavigationSystem
                     if (loadedMaps[i].isActiveAndEnabled)
                     {
                         AddRegisteredMap(loadedMaps[i]);
+                    }
+                }
+
+                MapMarker[] loadedMarkers = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
+                for (int i = 0; i < loadedMarkers.Length; i++)
+                {
+                    if (loadedMarkers[i].isActiveAndEnabled)
+                    {
+                        markers.AddObject(loadedMarkers[i]);
                     }
                 }
 
@@ -345,6 +366,16 @@ namespace Gley.NavigationSystem
         public void SetUTurnRule(UTurnRule rule)
         {
             RunOrQueue(new NavigationCommand(NavigationCommandType.SetUTurnRule, null, null, Vector3.zero, 0f, 0, (int)rule));
+        }
+
+        public void AddMarker(MapMarker marker)
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.AddMarker, marker));
+        }
+
+        public void RemoveMarker(MapMarker marker)
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.RemoveMarker, marker));
         }
 
         public void RequestRoute(NavigationRouteRequest request, Action<Route> callback)
@@ -468,6 +499,21 @@ namespace Gley.NavigationSystem
             car = value;
             carYawOffset = yawOffset;
             carNeedsReset = true;
+        }
+
+        internal void SetPlayerMarkerPrefab(GameObject value)
+        {
+            playerMarkerPrefab = value;
+        }
+
+        internal void SetDestinationMarkerPrefab(GameObject value)
+        {
+            destinationMarkerPrefab = value;
+        }
+
+        internal void SetPreviewPinPrefab(GameObject value)
+        {
+            previewPinPrefab = value;
         }
 
         internal void SetStartManually(bool value)
@@ -716,6 +762,16 @@ namespace Gley.NavigationSystem
             CustomLogger.LogWarning("The car jumped far away from all roads. If you use a floating origin system, make sure it moves the map object, or set Shift source to Manual.", this);
         }
 
+        private void UpdateMarkerRegistryLogic()
+        {
+            if (car != null)
+            {
+                markers.EnsurePlayer(playerMarkerPrefab, MinimapChannelBit | FullMapChannelBit);
+                markers.SetPlayer(CarTruePosition, motion.NoseHeading);
+            }
+            markers.UpdateMarkerRegistryLogic(converter);
+        }
+
         private void UpdateRouteLogic()
         {
             LastRerouteDecision = RerouteReason.None;
@@ -750,6 +806,7 @@ namespace Gley.NavigationSystem
         private void ClearActiveNavigation()
         {
             hasActiveRoute = false;
+            RemoveDestinationMarker();
             if (session != null)
             {
                 session.Stop();
@@ -792,6 +849,7 @@ namespace Gley.NavigationSystem
             }
 
             SwapActiveRoute();
+            AddOrMoveDestinationMarker(activeDestination);
             session.Start(activeRoute);
             RaiseRerouted(activeRoute, reason);
         }
@@ -908,6 +966,7 @@ namespace Gley.NavigationSystem
             }
 
             SwapPreviewRoute();
+            AddOrMovePreviewMarker(previewDestination);
             RaisePreviewReady(previewRoute, null);
         }
 
@@ -1145,6 +1204,7 @@ namespace Gley.NavigationSystem
             if (hasPreview)
             {
                 hasPreview = false;
+                RemovePreviewMarker();
                 RaisePreviewCanceled();
             }
 
@@ -1283,6 +1343,12 @@ namespace Gley.NavigationSystem
                 case NavigationCommandType.SetUTurnRule:
                     ExecuteSetUTurnRule((UTurnRule)command.EnumValue);
                     break;
+                case NavigationCommandType.AddMarker:
+                    ExecuteAddMarker(command.Marker);
+                    break;
+                case NavigationCommandType.RemoveMarker:
+                    ExecuteRemoveMarker(command.Marker);
+                    break;
             }
         }
 
@@ -1348,6 +1414,7 @@ namespace Gley.NavigationSystem
             if (failure != FailureReason.None)
             {
                 hasPreview = false;
+                RemovePreviewMarker();
                 RaisePreviewFailed(failure);
                 return;
             }
@@ -1355,6 +1422,7 @@ namespace Gley.NavigationSystem
             SwapPreviewRoute();
             previewDestination = trueDestination;
             hasPreview = true;
+            AddOrMovePreviewMarker(previewDestination);
             RaisePreviewReady(previewRoute, null);
         }
 
@@ -1389,6 +1457,7 @@ namespace Gley.NavigationSystem
             SwapActiveRoute();
             activeDestination = trueDestination;
             hasActiveRoute = true;
+            AddOrMoveDestinationMarker(trueDestination);
             session.Start(activeRoute);
             RaiseNavigationStarted(activeRoute);
         }
@@ -1424,6 +1493,7 @@ namespace Gley.NavigationSystem
             }
 
             hasPreview = false;
+            RemovePreviewMarker();
             BeginNavigationFromScratch(previewDestination);
         }
 
@@ -1435,6 +1505,7 @@ namespace Gley.NavigationSystem
             }
 
             hasPreview = false;
+            RemovePreviewMarker();
             RaisePreviewCanceled();
         }
 
@@ -1482,6 +1553,60 @@ namespace Gley.NavigationSystem
 
             preferences.UTurn = rule;
             preferencesDirty = true;
+        }
+
+        private void ExecuteAddMarker(MapMarker marker)
+        {
+            markers.AddObject(marker);
+        }
+
+        private void ExecuteRemoveMarker(MapMarker marker)
+        {
+            markers.RemoveObject(marker);
+        }
+
+        private void AddOrMoveDestinationMarker(Vector3 truePosition)
+        {
+            if (destinationMarkerIndex < 0)
+            {
+                destinationMarkerIndex = markers.AddPoint(truePosition, destinationMarkerPrefab, MinimapChannelBit | FullMapChannelBit, true);
+            }
+            else
+            {
+                markers.SetPointPosition(destinationMarkerIndex, truePosition);
+            }
+        }
+
+        private void RemoveDestinationMarker()
+        {
+            if (destinationMarkerIndex < 0)
+            {
+                return;
+            }
+            markers.RemovePoint(destinationMarkerIndex);
+            destinationMarkerIndex = -1;
+        }
+
+        private void AddOrMovePreviewMarker(Vector3 truePosition)
+        {
+            if (previewMarkerIndex < 0)
+            {
+                previewMarkerIndex = markers.AddPoint(truePosition, previewPinPrefab, FullMapChannelBit, false);
+            }
+            else
+            {
+                markers.SetPointPosition(previewMarkerIndex, truePosition);
+            }
+        }
+
+        private void RemovePreviewMarker()
+        {
+            if (previewMarkerIndex < 0)
+            {
+                return;
+            }
+            markers.RemovePoint(previewMarkerIndex);
+            previewMarkerIndex = -1;
         }
 
         private void OnDestroy()
