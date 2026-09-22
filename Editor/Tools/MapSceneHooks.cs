@@ -31,7 +31,10 @@ namespace Gley.NavigationSystem.Editor
                 {
                     continue;
                 }
-                sync.SnapObjectToAsset(map.transform, map.MapData, unitsPerMeter);
+                if (sync.SnapObjectToAsset(map.transform, map.MapData, unitsPerMeter))
+                {
+                    EditorUtility.SetDirty(map.MapData);
+                }
             }
         }
 

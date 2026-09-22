@@ -1,10 +1,11 @@
+using UnityEditor;
 using UnityEngine;
 
 namespace Gley.NavigationSystem.Editor
 {
     public class MapRectangleSync
     {
-        public void SnapObjectToAsset(Transform t, MapData data, float unitsPerMeter)
+        public bool SnapObjectToAsset(Transform t, MapData data, float unitsPerMeter)
         {
             Vector3 position = t.position;
             position.x = data.RectangleCenter.x * unitsPerMeter;
@@ -12,6 +13,24 @@ namespace Gley.NavigationSystem.Editor
             t.position = position;
             t.rotation = Quaternion.Euler(0f, data.RectangleRotationY, 0f);
             t.localScale = Vector3.one;
+
+            return WriteEditTimePosition(data, t.position);
+        }
+
+        public void SnapSceneObjectsToAsset(MapData data, float unitsPerMeter, string undoName)
+        {
+            NavigationMap[] maps = Object.FindObjectsOfType<NavigationMap>(true);
+            for (int i = 0; i < maps.Length; i++)
+            {
+                NavigationMap map = maps[i];
+                if (map.MapData != data)
+                {
+                    continue;
+                }
+
+                Undo.RecordObject(map.transform, undoName);
+                SnapObjectToAsset(map.transform, data, unitsPerMeter);
+            }
         }
 
         public MapRectangleSyncResult ApplyTransformChange(Transform t, MapData data, float unitsPerMeter)
@@ -43,6 +62,7 @@ namespace Gley.NavigationSystem.Editor
                 Vector3 revertedCenter = data.RectangleCenter;
                 revertedCenter.y = position.y;
                 data.SetRectangleCenter(revertedCenter);
+                data.SetEditTimeWorldPosition(position);
 
                 return MapRectangleSyncResult.Reverted;
             }
@@ -127,6 +147,17 @@ namespace Gley.NavigationSystem.Editor
 
             data.SetRectangleCenter(newCenter);
             data.SetRectangleSize(new Vector2(newWidth, newHeight));
+        }
+
+        private bool WriteEditTimePosition(MapData data, Vector3 position)
+        {
+            if (data.EditTimeWorldPosition == position)
+            {
+                return false;
+            }
+
+            data.SetEditTimeWorldPosition(position);
+            return true;
         }
 
         private bool IsRightCorner(int corner)

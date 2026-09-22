@@ -62,6 +62,7 @@ namespace Gley.NavigationSystem.Editor
             Undo.RecordObject(data, "Edit Map Rectangle");
             data.SetRectangleSize(newSize);
             data.SetRectangleRotationY(newRotation);
+            sync.SnapSceneObjectsToAsset(data, ResolveUnitsPerMeter(), "Edit Map Rectangle");
             EditorUtility.SetDirty(data);
         }
 

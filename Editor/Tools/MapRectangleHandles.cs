@@ -45,6 +45,7 @@ namespace Gley.NavigationSystem.Editor
 
                 Undo.RecordObject(data, "Resize Map Rectangle");
                 sync.ResizeFromCorner(data, corner, newCornerMap, keepRatio);
+                sync.SnapSceneObjectsToAsset(data, unitsPerMeter, "Resize Map Rectangle");
                 EditorUtility.SetDirty(data);
             }
         }
