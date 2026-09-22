@@ -31,6 +31,7 @@ namespace Gley.NavigationSystem
         private bool searchedWhileStopped;
 
         public Vector3 SnappedPosition { get; private set; }
+        public Vector3 RoadTangent { get; private set; }
         public float LeaveMargin { get; set; }
         public float UnconnectedSwitchDistance { get; set; }
         public float DistanceAlong { get; private set; }
@@ -108,6 +109,7 @@ namespace Gley.NavigationSystem
             ChangedRoad = false;
             DistanceAlong = 0f;
             SnappedPosition = Vector3.zero;
+            RoadTangent = Vector3.zero;
             MovingForward = true;
             hasLastPosition = false;
             searchedWhileStopped = false;
@@ -266,6 +268,7 @@ namespace Gley.NavigationSystem
         {
             DistanceAlong = point.DistanceAlong;
             SnappedPosition = point.Position;
+            RoadTangent = point.Tangent;
             MovingForward = heading.x * point.Tangent.x + heading.z * point.Tangent.z >= 0f;
         }
 

@@ -10,6 +10,7 @@ namespace Gley.NavigationSystem
     {
         private const float RotationTolerance = 0.01f;
         private const float MinHeadingLength = 0.0001f;
+        private const float RoadHeadingFlipDot = -0.25f;
 
         private readonly List<NavigationMap> registeredMaps = new List<NavigationMap>();
         private readonly WorldConverter converter = new WorldConverter();
@@ -54,7 +55,9 @@ namespace Gley.NavigationSystem
         [SerializeField] private float teleportDistance = 50f;
         [SerializeField] private float leaveMargin = 3f;
         private float drivenDistance;
+        private float roadHeadingSign = 1f;
         private int dispatchDepth;
+        private int roadHeadingRoadIndex = -1;
         [SerializeField] private bool startManually;
         private bool carNeedsReset;
         private bool severalMapsWarned;
@@ -109,6 +112,7 @@ namespace Gley.NavigationSystem
         internal RerouteReason LastRerouteDecision { get; private set; }
         public Vector3 NoseHeading { get { return motion.NoseHeading; } }
         internal Vector3 MovementHeading { get { return motion.MovementHeading; } }
+        internal Vector3 RoadHeading { get; private set; }
         internal Vector3 CarTruePosition { get; private set; }
         internal Vector2 CarMapPosition { get; private set; }
         public float Speed { get { return motion.Speed; } }
@@ -153,6 +157,7 @@ namespace Gley.NavigationSystem
         public bool HasActiveRoute { get { return hasActiveRoute; } }
         public bool HasPreview { get { return hasPreview; } }
         internal bool CarTeleported { get { return motion.Teleported; } }
+        internal bool HasRoadHeading { get; private set; }
 
         private void Start()
         {
@@ -568,11 +573,13 @@ namespace Gley.NavigationSystem
             {
                 IsOffRoad = false;
                 CurrentRoadId = -1;
+                HasRoadHeading = false;
                 return;
             }
 
             bool wasOffRoad = IsOffRoad;
             matcher.UpdateRoadMatchingLogic(CarTruePosition, motion.MovementHeading, motion.IsStopped, motion.Teleported);
+            UpdateRoadHeading();
 
             IsOffRoad = !matcher.IsOnRoad;
             if (matcher.IsOnRoad)
@@ -594,6 +601,39 @@ namespace Gley.NavigationSystem
             {
                 RaiseBackOnRoad();
             }
+        }
+
+        private void UpdateRoadHeading()
+        {
+            Vector3 tangent = matcher.RoadTangent;
+            if (!matcher.IsOnRoad || tangent.sqrMagnitude < MinHeadingLength)
+            {
+                HasRoadHeading = false;
+                roadHeadingRoadIndex = -1;
+                return;
+            }
+
+            Vector3 nose = motion.NoseHeading;
+            float noseDot = nose.x * tangent.x + nose.z * tangent.z;
+            if (matcher.RoadIndex != roadHeadingRoadIndex)
+            {
+                roadHeadingRoadIndex = matcher.RoadIndex;
+                if (noseDot >= 0f)
+                {
+                    roadHeadingSign = 1f;
+                }
+                else
+                {
+                    roadHeadingSign = -1f;
+                }
+            }
+            else if (noseDot * roadHeadingSign < RoadHeadingFlipDot)
+            {
+                roadHeadingSign = -roadHeadingSign;
+            }
+
+            RoadHeading = tangent * roadHeadingSign;
+            HasRoadHeading = true;
         }
 
         private void RaiseOffRoad()
@@ -1124,6 +1164,8 @@ namespace Gley.NavigationSystem
             scratchRoute = null;
             LastRerouteDecision = RerouteReason.None;
             CurrentRoadId = -1;
+            roadHeadingRoadIndex = -1;
+            HasRoadHeading = false;
             IsOffRoad = false;
             IsOutsideMap = false;
         }

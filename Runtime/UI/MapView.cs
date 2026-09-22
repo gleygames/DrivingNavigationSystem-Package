@@ -45,6 +45,8 @@ namespace Gley.NavigationSystem
         internal RawImage MapImage { get { return mapImage; } }
         internal RouteLineRenderer ActiveRouteRenderer { get { return activeRouteRenderer; } }
         internal RouteLineRenderer PreviewRouteRenderer { get { return previewRouteRenderer; } }
+        internal NavigationManager Manager { get { return cachedManager; } }
+        internal RectTransform Viewport { get { return viewport; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }
         public float CanvasUnitsPerMeter { get { return math.ComputeScale(viewport.rect.width, zoomMeters); } }
