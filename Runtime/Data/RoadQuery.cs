@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
@@ -63,6 +64,52 @@ namespace Gley.NavigationSystem
 
             result = best;
             return found;
+        }
+
+        public void FindAllWithin(Vector3 truePos, float radius, List<RoadPoint> output)
+        {
+            output.Clear();
+
+            RoadGrid grid = data.Grid;
+
+            int cellXMin;
+            int cellXMax;
+            int cellZMin;
+            int cellZMax;
+            grid.GetCellRange(truePos.x - radius, truePos.z - radius, truePos.x + radius, truePos.z + radius, out cellXMin, out cellXMax, out cellZMin, out cellZMax);
+
+            for (int cz = cellZMin; cz <= cellZMax; cz++)
+            {
+                for (int cx = cellXMin; cx <= cellXMax; cx++)
+                {
+                    int cellIndex = grid.GetCellIndex(cx, cz);
+                    int start = grid.GetCellStart(cellIndex);
+                    int count = grid.GetCellCount(cellIndex);
+                    for (int e = start; e < start + count; e++)
+                    {
+                        int roadIndex = grid.GetEntryRoad(e);
+                        int pointIndex = grid.GetEntryPoint(e);
+
+                        RoadPoint candidate;
+                        ProjectOntoSegment(truePos, roadIndex, pointIndex, out candidate);
+
+                        if (candidate.Distance > radius)
+                        {
+                            continue;
+                        }
+
+                        int existing = FindRoadInOutput(output, roadIndex);
+                        if (existing < 0)
+                        {
+                            output.Add(candidate);
+                        }
+                        else if (candidate.Distance < output[existing].Distance)
+                        {
+                            output[existing] = candidate;
+                        }
+                    }
+                }
+            }
         }
 
         public void ProjectOnRoad(int roadIndex, Vector3 truePos, out RoadPoint result)
@@ -143,6 +190,18 @@ namespace Gley.NavigationSystem
             }
 
             result = new RoadPoint(roadIndex, segmentPointIndex, distanceAlong, position, distance, tangent);
+        }
+
+        private int FindRoadInOutput(List<RoadPoint> output, int roadIndex)
+        {
+            for (int i = 0; i < output.Count; i++)
+            {
+                if (output[i].RoadIndex == roadIndex)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
 }
