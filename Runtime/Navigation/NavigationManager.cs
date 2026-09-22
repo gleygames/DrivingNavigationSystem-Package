@@ -63,6 +63,7 @@ namespace Gley.NavigationSystem
         private bool hasPreview;
         private bool preferencesDirty;
         private bool processingQueue;
+        private bool misconfigurationWarned;
 
         public event Action<NavigationMap> MapChanged;
         public event Action<Transform> CarChanged;
@@ -583,6 +584,8 @@ namespace Gley.NavigationSystem
                 CurrentRoadId = -1;
             }
 
+            CheckMisconfigurationWarning(!wasOffRoad);
+
             if (IsOffRoad && !wasOffRoad)
             {
                 RaiseOffRoad();
@@ -646,6 +649,31 @@ namespace Gley.NavigationSystem
             {
                 EndDispatch();
             }
+        }
+
+        private void CheckMisconfigurationWarning(bool wasOnRoad)
+        {
+            if (misconfigurationWarned || !motion.Teleported || !wasOnRoad || roadQuery == null)
+            {
+                return;
+            }
+
+            RoadPoint nearestPoint;
+            bool foundNearbyRoad = roadQuery.FindNearest(CarTruePosition, startSnapDistance, out nearestPoint);
+
+            bool outsideMap = false;
+            if (Frame != null)
+            {
+                outsideMap = !Frame.ContainsMap(Frame.TrueToMap(CarTruePosition));
+            }
+
+            if (foundNearbyRoad && !outsideMap)
+            {
+                return;
+            }
+
+            misconfigurationWarned = true;
+            CustomLogger.LogWarning("The car jumped far away from all roads. If you use a floating origin system, make sure it moves the map object, or set Shift source to Manual.", this);
         }
 
         private void UpdateRouteLogic()
