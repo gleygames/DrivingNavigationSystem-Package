@@ -11,13 +11,13 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationSetupWindow : EditorWindow
     {
-        private const string PrefabFolder = "Assets/Gley/DrivingNavigationSystem/Prefabs";
+        private const string PrefabFolder = "Assets/Gley/DrivingNavigationSystem/Graphics/Prefabs";
         private const string MinimapPrefabPath = PrefabFolder + "/NavigationMinimap.prefab";
         private const string FullMapPrefabPath = PrefabFolder + "/NavigationFullMap.prefab";
         private const string PlayerMarkerPrefabPath = PrefabFolder + "/PlayerMarker.prefab";
         private const string DestinationMarkerPrefabPath = PrefabFolder + "/DestinationMarker.prefab";
         private const string PreviewPinPrefabPath = PrefabFolder + "/PreviewPin.prefab";
-        private const string DefaultFormatterPath = PrefabFolder + "/DefaultFormatter.asset";
+        private const string DefaultFormatterPath = "Assets/Gley/DrivingNavigationSystem/Graphics/Presets/DefaultFormatter.asset";
         private const string InputActionsPath = "Assets/Gley/DrivingNavigationSystem/Runtime.InputSystem/NavigationMapControls.inputactions";
         private const string GamepadAdapterTypeName = "Gley.NavigationSystem.InputSystem.GamepadInputAdapter, Gley.NavigationSystem.InputSystem";
         private const string InputSystemUIModuleTypeName = "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem";
@@ -591,7 +591,7 @@ namespace Gley.NavigationSystem.Editor
             GameObject fullMapPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FullMapPrefabPath);
             if (minimapPrefab == null || fullMapPrefab == null)
             {
-                CustomLogger.LogError("NavigationSetupWindow: default prefabs are missing. Run Tools > Gley > Navigation Dev > Build Default Prefabs.");
+                CustomLogger.LogError("NavigationSetupWindow: default prefabs are missing from " + PrefabFolder + ". Reimport the Driving Navigation System package.");
                 return;
             }
 

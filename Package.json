@@ -1,6 +1,6 @@
 {
     "name": "com.gley.navigationsystem",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "displayName": "Driving Navigation System",
     "description": "GPS navigation and minimap system for driving games.",
     "unity": "2021.3",
