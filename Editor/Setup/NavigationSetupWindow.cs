@@ -51,10 +51,13 @@ namespace Gley.NavigationSystem.Editor
         private RoadNetworkAuthoring authoringAsset;
         private NavigationManager managerInScene;
         private Canvas targetCanvas;
+        private GameObject previewCarPrefab;
+        private Bounds previewCarBounds;
         private Vector2 scrollPosition;
         private string mapFolder;
         private string mapName;
         private float pendingYawOffset;
+        private bool carSpawnedAtRuntime;
 
         [MenuItem(NavigationSetupWindowProperties.MenuItem, false, 1)]
         private static void OpenWindow()
@@ -123,6 +126,7 @@ namespace Gley.NavigationSystem.Editor
             {
                 SerializedObject serializedManager = new SerializedObject(managerInScene);
                 pendingYawOffset = serializedManager.FindProperty("carYawOffset").floatValue;
+                carSpawnedAtRuntime = serializedManager.FindProperty("carSpawnedAtRuntime").boolValue;
             }
 
             EnsureMarkerPrefabs();
@@ -204,15 +208,27 @@ namespace Gley.NavigationSystem.Editor
 
         private void HandleSceneGUI(SceneView sceneView)
         {
-            if (managerInScene == null || managerInScene.Car == null)
+            if (managerInScene == null)
             {
                 return;
             }
 
             Transform car = managerInScene.Car;
-            Vector3 direction = car.rotation * Quaternion.Euler(0f, pendingYawOffset, 0f) * Vector3.forward;
-            Handles.color = Color.cyan;
-            Handles.ArrowHandleCap(0, car.position, Quaternion.LookRotation(direction), GizmoArrowLength, EventType.Repaint);
+            if (car != null)
+            {
+                Vector3 direction = car.rotation * Quaternion.Euler(0f, pendingYawOffset, 0f) * Vector3.forward;
+                Handles.color = Color.cyan;
+                Handles.ArrowHandleCap(0, car.position, Quaternion.LookRotation(direction), GizmoArrowLength, EventType.Repaint);
+                return;
+            }
+
+            if (carSpawnedAtRuntime && previewCarPrefab != null)
+            {
+                Vector3 previewDirection = Quaternion.Euler(0f, pendingYawOffset, 0f) * Vector3.forward;
+                Handles.color = Color.cyan;
+                Handles.DrawWireCube(previewCarBounds.center, previewCarBounds.size);
+                Handles.ArrowHandleCap(0, previewCarBounds.center, Quaternion.LookRotation(previewDirection), GizmoArrowLength, EventType.Repaint);
+            }
         }
 
         private void OnGUI()
@@ -679,7 +695,7 @@ namespace Gley.NavigationSystem.Editor
         private void DrawStep5Car()
         {
             bool carAssigned = managerInScene != null && managerInScene.Car != null;
-            SetupStatus status = evaluator.EvaluateCar(carAssigned);
+            SetupStatus status = evaluator.EvaluateCar(carAssigned, carSpawnedAtRuntime);
             DrawStepHeader(5, "Car", status);
 
             if (managerInScene == null)
@@ -688,9 +704,52 @@ namespace Gley.NavigationSystem.Editor
                 return;
             }
 
+            bool newSpawnedAtRuntime = EditorGUILayout.Toggle("Car spawned at runtime", carSpawnedAtRuntime);
+            if (newSpawnedAtRuntime != carSpawnedAtRuntime)
+            {
+                carSpawnedAtRuntime = newSpawnedAtRuntime;
+                WriteCarSpawnedAtRuntime();
+            }
+
+            if (carSpawnedAtRuntime)
+            {
+                DrawRuntimeCar();
+                return;
+            }
+
+            DrawSceneCar();
+        }
+
+        private void DrawSceneCar()
+        {
             Transform currentCar = managerInScene.Car;
             Transform newCar = (Transform)EditorGUILayout.ObjectField("Car", currentCar, typeof(Transform), true);
 
+            DrawYawButtons(newCar);
+
+            if (newCar != currentCar)
+            {
+                ApplyCar(newCar, pendingYawOffset);
+            }
+        }
+
+        private void DrawRuntimeCar()
+        {
+            EditorGUILayout.HelpBox("After the car is spawned, call NavigationManager.SetCar(car.transform, navigationManager.CarYawOffset).", MessageType.Info);
+
+            GameObject newPrefab = (GameObject)EditorGUILayout.ObjectField("Preview prefab", previewCarPrefab, typeof(GameObject), false);
+            if (newPrefab != previewCarPrefab)
+            {
+                previewCarPrefab = newPrefab;
+                previewCarBounds = ComputePreviewBounds(previewCarPrefab);
+                SceneView.RepaintAll();
+            }
+
+            DrawYawButtons(managerInScene.Car);
+        }
+
+        private void DrawYawButtons(Transform car)
+        {
             EditorGUILayout.LabelField("Yaw offset", pendingYawOffset.ToString("0"));
             EditorGUILayout.BeginHorizontal();
             for (int i = 0; i < quickYawAngles.Length; i++)
@@ -698,15 +757,47 @@ namespace Gley.NavigationSystem.Editor
                 if (GUILayout.Button(quickYawAngles[i].ToString("0")))
                 {
                     pendingYawOffset = quickYawAngles[i];
-                    managerInScene.SetCarReference(newCar, pendingYawOffset);
+                    ApplyCar(car, pendingYawOffset);
                 }
             }
             EditorGUILayout.EndHorizontal();
+        }
 
-            if (newCar != currentCar)
+        private void ApplyCar(Transform car, float yawOffset)
+        {
+            managerInScene.SetCarReference(car, yawOffset);
+            EditorUtility.SetDirty(managerInScene);
+            SceneView.RepaintAll();
+        }
+
+        private void WriteCarSpawnedAtRuntime()
+        {
+            SerializedObject serializedManager = new SerializedObject(managerInScene);
+            serializedManager.FindProperty("carSpawnedAtRuntime").boolValue = carSpawnedAtRuntime;
+            serializedManager.ApplyModifiedProperties();
+            SceneView.RepaintAll();
+        }
+
+        private Bounds ComputePreviewBounds(GameObject prefab)
+        {
+            Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
+            if (prefab == null)
             {
-                managerInScene.SetCarReference(newCar, pendingYawOffset);
+                return bounds;
             }
+
+            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                return bounds;
+            }
+
+            bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+            return bounds;
         }
 
         private void OnSelectionChange()

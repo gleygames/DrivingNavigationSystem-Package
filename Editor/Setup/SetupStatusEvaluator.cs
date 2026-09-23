@@ -59,9 +59,9 @@ namespace Gley.NavigationSystem.Editor
             return SetupStatus.Done;
         }
 
-        public SetupStatus EvaluateCar(bool carAssigned)
+        public SetupStatus EvaluateCar(bool carAssigned, bool carSpawnedAtRuntime)
         {
-            if (carAssigned)
+            if (carAssigned || carSpawnedAtRuntime)
             {
                 return SetupStatus.Done;
             }

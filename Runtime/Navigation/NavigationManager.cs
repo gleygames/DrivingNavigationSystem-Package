@@ -72,6 +72,7 @@ namespace Gley.NavigationSystem
         private int destinationMarkerIndex = -1;
         private int previewMarkerIndex = -1;
         [SerializeField] private bool startManually;
+        [SerializeField] private bool carSpawnedAtRuntime;
         private bool carNeedsReset;
         private bool severalMapsWarned;
         private bool rotationWarned;
@@ -98,6 +99,7 @@ namespace Gley.NavigationSystem
 
         public NavigationMap ActiveMap { get; private set; }
         public Transform Car { get { return car; } }
+        public float CarYawOffset { get { return carYawOffset; } }
         public Route ActiveRoute
         {
             get
