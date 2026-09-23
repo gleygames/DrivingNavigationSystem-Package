@@ -13,7 +13,7 @@ namespace Gley.NavigationSystem
         private const float UnconnectedBetterMargin = 2f;
         private const float LostSearchRadius = 30f;
         private const float EndTolerance = 0.001f;
-        private const int MaxForkCandidates = 3;
+        private const int MinForkCandidates = 3;
         private const int SearchCapacity = 64;
 
         private readonly List<RoadPoint> searchResults;
@@ -49,8 +49,9 @@ namespace Gley.NavigationSystem
             this.data = data;
             query = new RoadQuery(data);
             searchResults = new List<RoadPoint>(SearchCapacity);
-            forkPoints = new RoadPoint[MaxForkCandidates];
-            forkScores = new float[MaxForkCandidates];
+            int forkCapacity = GetForkCapacity(data);
+            forkPoints = new RoadPoint[forkCapacity];
+            forkScores = new float[forkCapacity];
             LeaveMargin = DefaultLeaveMargin;
             UnconnectedSwitchDistance = DefaultUnconnectedSwitchDistance;
             Reset();
@@ -113,6 +114,20 @@ namespace Gley.NavigationSystem
             MovingForward = true;
             hasLastPosition = false;
             searchedWhileStopped = false;
+        }
+
+        private int GetForkCapacity(RoadNetworkData network)
+        {
+            int capacity = MinForkCandidates;
+            for (int i = 0; i < network.IntersectionCount; i++)
+            {
+                int linkCount = network.GetIntersection(i).LinkCount;
+                if (linkCount > capacity)
+                {
+                    capacity = linkCount;
+                }
+            }
+            return capacity;
         }
 
         private void RunLostSearch(Vector3 truePos, Vector3 heading)
@@ -444,7 +459,7 @@ namespace Gley.NavigationSystem
                 }
             }
 
-            if (forkCount < MaxForkCandidates)
+            if (forkCount < forkPoints.Length)
             {
                 forkPoints[forkCount] = point;
                 forkScores[forkCount] = score;

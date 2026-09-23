@@ -1,3 +1,4 @@
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
@@ -10,6 +11,7 @@ namespace Gley.NavigationSystem
         private const float TurnEndDegrees = 2f;
 
         private readonly MinimapMath math = new MinimapMath();
+        private readonly ProfilerMarker followCarMarker = new ProfilerMarker("Gley.Nav.FollowCar");
 
         private MapView view;
         private NavigationMap lastMap;
@@ -42,6 +44,10 @@ namespace Gley.NavigationSystem
         private void OnEnable()
         {
             view = GetComponent<MapView>();
+            if (view != null)
+            {
+                view.SetFollowCar(this);
+            }
             needsSnap = true;
         }
 
@@ -52,37 +58,40 @@ namespace Gley.NavigationSystem
 
         public void UpdateFollowCarVisuals(float deltaTime)
         {
-            if (view == null)
+            using (followCarMarker.Auto())
             {
-                return;
-            }
+                if (view == null)
+                {
+                    return;
+                }
 
-            NavigationManager manager = view.Manager;
-            if (manager == null || manager.Frame == null || manager.Car == null || view.Viewport == null)
-            {
-                PinPlayerToEdge = false;
-                return;
-            }
+                NavigationManager manager = view.Manager;
+                if (manager == null || manager.Frame == null || manager.Car == null || view.Viewport == null)
+                {
+                    PinPlayerToEdge = false;
+                    return;
+                }
 
-            Rect rect = view.Viewport.rect;
-            if (rect.width <= 0f || rect.height <= 0f)
-            {
-                return;
-            }
+                Rect rect = view.Viewport.rect;
+                if (rect.width <= 0f || rect.height <= 0f)
+                {
+                    return;
+                }
 
-            if (manager.ActiveMap != lastMap || manager.Car != lastCar)
-            {
-                lastMap = manager.ActiveMap;
-                lastCar = manager.Car;
-                needsSnap = true;
-            }
+                if (manager.ActiveMap != lastMap || manager.Car != lastCar)
+                {
+                    lastMap = manager.ActiveMap;
+                    lastCar = manager.Car;
+                    needsSnap = true;
+                }
 
-            MapFrame frame = manager.Frame;
-            UpdateRotation(manager, frame, deltaTime);
-            UpdateZoom(manager, frame.Size, rect.size, deltaTime);
-            UpdateCenter(manager, frame.Size, rect);
-            PinPlayerToEdge = manager.IsOutsideMap;
-            needsSnap = false;
+                MapFrame frame = manager.Frame;
+                UpdateRotation(manager, frame, deltaTime);
+                UpdateZoom(manager, frame.Size, rect.size, deltaTime);
+                UpdateCenter(manager, frame.Size, rect);
+                PinPlayerToEdge = manager.IsOutsideMap;
+                needsSnap = false;
+            }
         }
 
         public void SetRotationMode(MinimapRotationMode value)
@@ -250,6 +259,14 @@ namespace Gley.NavigationSystem
 
             Vector2 pivotToViewCenter = math.Rotate(rect.center / unitsPerMeter, -rotation);
             view.SetCenter(clampedViewCenter - pivotToViewCenter);
+        }
+
+        private void OnDisable()
+        {
+            if (view != null && view.FollowCar == this)
+            {
+                view.SetFollowCar(null);
+            }
         }
     }
 }

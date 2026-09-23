@@ -42,6 +42,10 @@ namespace Gley.NavigationSystem
 
             if (session.WrongTurn)
             {
+                if (matcher.IsInFork)
+                {
+                    return RerouteReason.None;
+                }
                 return RerouteReason.WrongTurn;
             }
 

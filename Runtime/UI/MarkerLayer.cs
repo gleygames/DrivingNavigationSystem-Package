@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
@@ -11,6 +12,8 @@ namespace Gley.NavigationSystem
         private readonly Dictionary<GameObject, List<GameObject>> pool = new Dictionary<GameObject, List<GameObject>>();
         private readonly Dictionary<GameObject, GameObject> prefabOf = new Dictionary<GameObject, GameObject>();
         private readonly Dictionary<GameObject, NavigationTextTarget> arrowTextTargets = new Dictionary<GameObject, NavigationTextTarget>();
+        private readonly Dictionary<GameObject, RectTransform> arrowLabels = new Dictionary<GameObject, RectTransform>();
+        private readonly Dictionary<GameObject, Vector2> arrowLabelOffsets = new Dictionary<GameObject, Vector2>();
         private readonly Dictionary<int, GameObject> activeInstances = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, GameObject> activeArrows = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, float> arrowDistanceShown = new Dictionary<int, float>();
@@ -19,92 +22,95 @@ namespace Gley.NavigationSystem
         private readonly HashSet<int> visibleSet = new HashSet<int>();
         private readonly OffScreenArrowMath edgeMath = new OffScreenArrowMath();
         private readonly StringBuilder distanceScratch = new StringBuilder(16);
+        private readonly ProfilerMarker layerMarker = new ProfilerMarker("Gley.Nav.MarkerLayer");
 
         private MapView view;
-        private MapViewFollowCar followCar;
+        private RectTransform arrowContainer;
+        private RectTransform labelContainer;
         [SerializeField] private GameObject defaultMarkerPrefab;
         [SerializeField] private float cullMarginFraction = 0.1f;
 
         public void UpdateMarkerLayerVisuals(float deltaTime)
         {
-            EnsureFollowCarReference();
-
-            if (view == null)
+            using (layerMarker.Auto())
             {
-                return;
-            }
-
-            NavigationManager manager = view.Manager;
-            MapFrame frame = view.Frame;
-            RectTransform viewport = view.Viewport;
-            if (manager == null || frame == null || viewport == null)
-            {
-                ReleaseAllActive();
-                return;
-            }
-
-            Rect viewportRect = viewport.rect;
-            if (viewportRect.width <= 0f || viewportRect.height <= 0f)
-            {
-                return;
-            }
-
-            Vector2 minXZ;
-            Vector2 maxXZ;
-            ComputeVisibleTrueBounds(frame, viewportRect, out minXZ, out maxXZ);
-
-            manager.Markers.QueryVisible(minXZ, maxXZ, view.ChannelMask, currentVisible);
-
-            visibleSet.Clear();
-            for (int i = 0; i < currentVisible.Count; i++)
-            {
-                visibleSet.Add(currentVisible[i]);
-            }
-
-            ReleaseInactive();
-
-            Vector2 halfSize = viewportRect.size * 0.5f;
-            for (int i = 0; i < currentVisible.Count; i++)
-            {
-                int index = currentVisible[i];
-                MarkerEntry entry = manager.Markers.GetEntry(index);
-
-                Vector2 mapPoint = frame.TrueToMap(entry.TruePosition);
-                Vector2 viewportPoint = view.MapToViewport(mapPoint) - viewportRect.center;
-
-                bool showAsArrow = false;
-                Vector2 edgePoint = viewportPoint;
-                float edgeAngle = 0f;
-                if (entry.ShowArrow && !entry.IsPlayer && view.ShowOffScreenArrows)
+                if (view == null)
                 {
-                    showAsArrow = edgeMath.ComputeEdgePoint(viewportPoint, halfSize, view.EdgeShape, view.EdgeInset, out edgePoint, out edgeAngle);
+                    return;
                 }
 
-                if (showAsArrow)
+                NavigationManager manager = view.Manager;
+                MapFrame frame = view.Frame;
+                RectTransform viewport = view.Viewport;
+                if (manager == null || frame == null || viewport == null)
                 {
-                    ReleaseInstance(index);
-                    GameObject arrow = AcquireArrowInstance(index);
-                    if (arrow != null)
+                    ReleaseAllActive();
+                    return;
+                }
+
+                Rect viewportRect = viewport.rect;
+                if (viewportRect.width <= 0f || viewportRect.height <= 0f)
+                {
+                    return;
+                }
+
+                Vector2 minXZ;
+                Vector2 maxXZ;
+                ComputeVisibleTrueBounds(frame, viewportRect, out minXZ, out maxXZ);
+
+                manager.Markers.QueryVisible(minXZ, maxXZ, view.ChannelMask, currentVisible);
+
+                visibleSet.Clear();
+                for (int i = 0; i < currentVisible.Count; i++)
+                {
+                    visibleSet.Add(currentVisible[i]);
+                }
+
+                ReleaseInactive();
+
+                Vector2 halfSize = viewportRect.size * 0.5f;
+                for (int i = 0; i < currentVisible.Count; i++)
+                {
+                    int index = currentVisible[i];
+                    MarkerEntry entry = manager.Markers.GetEntry(index);
+
+                    Vector2 mapPoint = frame.TrueToMap(entry.TruePosition);
+                    Vector2 viewportPoint = view.MapToViewport(mapPoint) - viewportRect.center;
+
+                    bool showAsArrow = false;
+                    Vector2 edgePoint = viewportPoint;
+                    float edgeAngle = 0f;
+                    if (entry.ShowArrow && !entry.IsPlayer && view.ShowOffScreenArrows)
                     {
-                        PositionArrow(arrow, edgePoint, edgeAngle);
-                        UpdateArrowDistanceLabel(manager, entry, index, arrow);
+                        showAsArrow = edgeMath.ComputeEdgePoint(viewportPoint, halfSize, view.EdgeShape, view.EdgeInset, out edgePoint, out edgeAngle);
                     }
-                    continue;
-                }
 
-                ReleaseArrowInstance(index);
-
-                GameObject instance;
-                if (!activeInstances.TryGetValue(index, out instance))
-                {
-                    instance = AcquireInstance(entry.Prefab);
-                    if (instance == null)
+                    if (showAsArrow)
                     {
+                        ReleaseInstance(index);
+                        GameObject arrow = AcquireArrowInstance(index);
+                        if (arrow != null)
+                        {
+                            PositionArrow(arrow, edgePoint, edgeAngle);
+                            UpdateArrowDistanceLabel(manager, entry, index, arrow);
+                        }
                         continue;
                     }
-                    activeInstances.Add(index, instance);
+
+                    ReleaseArrowInstance(index);
+
+                    GameObject instance;
+                    if (!activeInstances.TryGetValue(index, out instance))
+                    {
+                        instance = AcquireInstance(entry.Prefab);
+                        if (instance == null)
+                        {
+                            continue;
+                        }
+                        activeInstances.Add(index, instance);
+                    }
+                    PositionMarker(instance, entry, viewportPoint, frame);
                 }
-                PositionMarker(instance, entry, viewportPoint, frame);
             }
         }
 
@@ -181,15 +187,6 @@ namespace Gley.NavigationSystem
             }
 
             return found;
-        }
-
-        private void EnsureFollowCarReference()
-        {
-            if (followCar != null || view == null)
-            {
-                return;
-            }
-            followCar = view.GetComponent<MapViewFollowCar>();
         }
 
         private void ReleaseAllActive()
@@ -312,12 +309,79 @@ namespace Gley.NavigationSystem
                 return null;
             }
 
-            instance = AcquireFromPool(prefab);
+            instance = AcquireFromPool(prefab, GetArrowContainer());
+            PrepareArrow(instance);
+            SetArrowLabelActive(instance, true);
             activeArrows.Add(index, instance);
             return instance;
         }
 
-        private GameObject AcquireFromPool(GameObject prefab)
+        private RectTransform GetArrowContainer()
+        {
+            if (arrowContainer == null)
+            {
+                arrowContainer = CreateContainer("OffScreenArrows");
+                labelContainer = CreateContainer("OffScreenArrowLabels");
+            }
+            return arrowContainer;
+        }
+
+        private RectTransform CreateContainer(string containerName)
+        {
+            GameObject containerObject = new GameObject(containerName, typeof(RectTransform));
+            containerObject.transform.SetParent(transform, false);
+
+            RectTransform rect = containerObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            return rect;
+        }
+
+        private void PrepareArrow(GameObject arrow)
+        {
+            if (arrowTextTargets.ContainsKey(arrow))
+            {
+                return;
+            }
+
+            NavigationTextTarget textTarget = arrow.GetComponentInChildren<NavigationTextTarget>(true);
+            arrowTextTargets.Add(arrow, textTarget);
+            if (textTarget == null || textTarget.gameObject == arrow)
+            {
+                return;
+            }
+
+            RectTransform labelRect = textTarget.transform as RectTransform;
+            if (labelRect == null)
+            {
+                return;
+            }
+
+            Vector2 labelSize = labelRect.rect.size;
+            Vector2 offset = (Vector2)labelRect.localPosition + labelRect.rect.center;
+            labelRect.SetParent(labelContainer, false);
+            labelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            labelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            labelRect.pivot = new Vector2(0.5f, 0.5f);
+            labelRect.sizeDelta = labelSize;
+            labelRect.localRotation = Quaternion.identity;
+
+            arrowLabels.Add(arrow, labelRect);
+            arrowLabelOffsets.Add(arrow, offset);
+        }
+
+        private void SetArrowLabelActive(GameObject arrow, bool value)
+        {
+            RectTransform labelRect;
+            if (arrowLabels.TryGetValue(arrow, out labelRect) && labelRect.gameObject.activeSelf != value)
+            {
+                labelRect.gameObject.SetActive(value);
+            }
+        }
+
+        private GameObject AcquireFromPool(GameObject prefab, Transform parent)
         {
             List<GameObject> free;
             if (!pool.TryGetValue(prefab, out free))
@@ -334,7 +398,7 @@ namespace Gley.NavigationSystem
                 return reused;
             }
 
-            GameObject created = Instantiate(prefab, transform, false);
+            GameObject created = Instantiate(prefab, parent, false);
             RectTransform rect = created.transform as RectTransform;
             if (rect != null)
             {
@@ -353,8 +417,16 @@ namespace Gley.NavigationSystem
                 return;
             }
 
+            Quaternion rotation = Quaternion.Euler(0f, 0f, -angleDegrees);
             rect.anchoredPosition = edgePoint;
-            rect.localRotation = Quaternion.Euler(0f, 0f, -angleDegrees);
+            rect.localRotation = rotation;
+
+            RectTransform labelRect;
+            Vector2 offset;
+            if (arrowLabels.TryGetValue(arrow, out labelRect) && arrowLabelOffsets.TryGetValue(arrow, out offset))
+            {
+                labelRect.anchoredPosition = edgePoint + (Vector2)(rotation * offset);
+            }
         }
 
         private void UpdateArrowDistanceLabel(NavigationManager manager, MarkerEntry entry, int index, GameObject arrow)
@@ -409,6 +481,7 @@ namespace Gley.NavigationSystem
             }
             activeArrows.Remove(index);
             ReturnToPool(instance);
+            SetArrowLabelActive(instance, false);
             arrowDistanceShown.Remove(index);
         }
 
@@ -424,7 +497,7 @@ namespace Gley.NavigationSystem
                 return null;
             }
 
-            return AcquireFromPool(resolvedPrefab);
+            return AcquireFromPool(resolvedPrefab, transform);
         }
 
         private void PositionMarker(GameObject instance, MarkerEntry entry, Vector2 viewportPoint, MapFrame frame)
@@ -435,6 +508,7 @@ namespace Gley.NavigationSystem
                 return;
             }
 
+            MapViewFollowCar followCar = view.FollowCar;
             if (entry.IsPlayer && followCar != null && followCar.PinPlayerToEdge)
             {
                 Vector2 edgePoint;

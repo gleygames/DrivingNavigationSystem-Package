@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Gley.Common;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,6 +34,8 @@ namespace Gley.NavigationSystem
         private readonly List<int> _indices = new List<int>();
         private readonly List<bool> _dashed = new List<bool>();
         private readonly RouteLineMeshBuilder _meshBuilder = new RouteLineMeshBuilder();
+        private readonly ProfilerMarker _visualsMarker = new ProfilerMarker("Gley.Nav.RouteLine.Visuals");
+        private readonly ProfilerMarker _meshMarker = new ProfilerMarker("Gley.Nav.RouteLine.Mesh");
 
         [SerializeField] private Shader lineShader;
         private Material _materialInstance;
@@ -77,31 +80,34 @@ namespace Gley.NavigationSystem
 
         public void UpdateRouteLineVisuals(float deltaTime)
         {
-            if (_materialInstance == null)
+            using (_visualsMarker.Auto())
             {
-                return;
-            }
+                if (_materialInstance == null)
+                {
+                    return;
+                }
 
-            Canvas batchCanvas = canvas;
-            if (batchCanvas == null)
-            {
-                return;
-            }
+                Canvas batchCanvas = canvas;
+                if (batchCanvas == null)
+                {
+                    return;
+                }
 
-            Vector4 offsetMatrix;
-            if (!TryComputeCanvasOffsetMatrix(batchCanvas, out offsetMatrix))
-            {
-                return;
-            }
+                Vector4 offsetMatrix;
+                if (!TryComputeCanvasOffsetMatrix(batchCanvas, out offsetMatrix))
+                {
+                    return;
+                }
 
-            if (_hasCanvasOffsetMatrix && offsetMatrix == _canvasOffsetMatrix)
-            {
-                return;
-            }
+                if (_hasCanvasOffsetMatrix && offsetMatrix == _canvasOffsetMatrix)
+                {
+                    return;
+                }
 
-            _canvasOffsetMatrix = offsetMatrix;
-            _hasCanvasOffsetMatrix = true;
-            ApplyCanvasOffsetMatrixToMaterials();
+                _canvasOffsetMatrix = offsetMatrix;
+                _hasCanvasOffsetMatrix = true;
+                ApplyCanvasOffsetMatrixToMaterials();
+            }
         }
 
         public void SetShader(Shader shader)
@@ -153,14 +159,22 @@ namespace Gley.NavigationSystem
 
         public void SetTrimDistance(float meters)
         {
+            if (meters == _trimDistance)
+            {
+                return;
+            }
             _trimDistance = meters;
-            ApplyToMaterials();
+            ApplyFloatToMaterials(TrimDistanceProperty, meters);
         }
 
         public void SetCanvasUnitsPerMeter(float value)
         {
+            if (value == _canvasUnitsPerMeter)
+            {
+                return;
+            }
             _canvasUnitsPerMeter = value;
-            ApplyToMaterials();
+            ApplyFloatToMaterials(CanvasUnitsPerMeterProperty, value);
         }
 
         public override Material GetModifiedMaterial(Material baseMaterial)
@@ -176,21 +190,24 @@ namespace Gley.NavigationSystem
 
         protected override void OnPopulateMesh(VertexHelper vh)
         {
-            vh.Clear();
-            MeshBuildCount++;
-
-            if (_materialInstance == null)
+            using (_meshMarker.Auto())
             {
-                return;
-            }
+                vh.Clear();
+                MeshBuildCount++;
 
-            _meshBuilder.Build(_points, _distances, _dashed, _vertices, _indices);
-            if (_vertices.Count == 0)
-            {
-                return;
-            }
+                if (_materialInstance == null)
+                {
+                    return;
+                }
 
-            vh.AddUIVertexStream(_vertices, _indices);
+                _meshBuilder.Build(_points, _distances, _dashed, _vertices, _indices);
+                if (_vertices.Count == 0)
+                {
+                    return;
+                }
+
+                vh.AddUIVertexStream(_vertices, _indices);
+            }
         }
 
         protected override void OnTransformParentChanged()
@@ -353,6 +370,27 @@ namespace Gley.NavigationSystem
             if (renderMaterial != null && renderMaterial != _materialInstance)
             {
                 ApplyMaterialProperties(renderMaterial);
+            }
+        }
+
+        private void ApplyFloatToMaterials(string propertyName, float value)
+        {
+            if (_materialInstance == null)
+            {
+                return;
+            }
+
+            _materialInstance.SetFloat(propertyName, value);
+
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            Material renderMaterial = materialForRendering;
+            if (renderMaterial != null && renderMaterial != _materialInstance)
+            {
+                renderMaterial.SetFloat(propertyName, value);
             }
         }
 

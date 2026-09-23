@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
@@ -15,6 +16,7 @@ namespace Gley.NavigationSystem
         private readonly List<float> _chunkEndDistances = new List<float>();
         private readonly List<bool> _chunkDashed = new List<bool>();
         private readonly RouteLineChunker _chunker = new RouteLineChunker();
+        private readonly ProfilerMarker _setLineMarker = new ProfilerMarker("Gley.Nav.RouteLine.SetLine");
 
         private Shader _shader;
         private Canvas _ownCanvas;
@@ -48,23 +50,28 @@ namespace Gley.NavigationSystem
 
         public void SetLine(List<Vector2> points, List<float> distances, List<bool> dashed)
         {
-            _chunker.Split(points, distances, dashed, _chunks);
-
-            for (int i = 0; i < _chunks.Count; i++)
+            using (_setLineMarker.Auto())
             {
-                RouteLineChunk chunk = _chunks[i];
-                RouteLineGraphic graphic = GetOrCreateGraphic(i);
-                BuildChunkSlice(points, distances, dashed, chunk);
-                graphic.SetLine(_chunkPoints, _chunkDistances, _chunkDashed);
-                _chunkEndDistances[i] = chunk.EndDistance;
-                graphic.gameObject.SetActive(true);
-            }
+                _chunker.Split(points, distances, dashed, _chunks);
 
-            _activeCount = _chunks.Count;
+                for (int i = 0; i < _chunks.Count; i++)
+                {
+                    RouteLineChunk chunk = _chunks[i];
+                    RouteLineGraphic graphic = GetOrCreateGraphic(i);
+                    BuildChunkSlice(points, distances, dashed, chunk);
+                    graphic.SetLine(_chunkPoints, _chunkDistances, _chunkDashed);
+                    graphic.SetTrimDistance(_trimDistance);
+                    graphic.SetCanvasUnitsPerMeter(_canvasUnitsPerMeter);
+                    _chunkEndDistances[i] = chunk.EndDistance;
+                    graphic.gameObject.SetActive(true);
+                }
 
-            for (int i = _activeCount; i < _graphics.Count; i++)
-            {
-                _graphics[i].gameObject.SetActive(false);
+                _activeCount = _chunks.Count;
+
+                for (int i = _activeCount; i < _graphics.Count; i++)
+                {
+                    _graphics[i].gameObject.SetActive(false);
+                }
             }
         }
 
@@ -88,6 +95,10 @@ namespace Gley.NavigationSystem
 
         public void SetTrimDistance(float meters)
         {
+            if (meters == _trimDistance)
+            {
+                return;
+            }
             _trimDistance = meters;
 
             for (int i = 0; i < _activeCount; i++)
@@ -103,6 +114,10 @@ namespace Gley.NavigationSystem
 
         public void SetCanvasUnitsPerMeter(float value)
         {
+            if (value == _canvasUnitsPerMeter)
+            {
+                return;
+            }
             _canvasUnitsPerMeter = value;
             for (int i = 0; i < _activeCount; i++)
             {

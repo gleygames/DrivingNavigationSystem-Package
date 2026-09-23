@@ -1,4 +1,5 @@
 using System;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,7 @@ namespace Gley.NavigationSystem
 
         private readonly FullMapMath math = new FullMapMath();
         private readonly CrosshairModeLogic crosshairLogic = new CrosshairModeLogic();
+        private readonly ProfilerMarker interactiveMarker = new ProfilerMarker("Gley.Nav.Interactive");
 
         private MapView view;
         private NavigationManager manager;
@@ -58,38 +60,41 @@ namespace Gley.NavigationSystem
 
         public void UpdateInteractiveMapLogic(float deltaTime)
         {
-            NavigationManager activeManager = ResolveManagerWithFrame();
-            if (activeManager == null)
+            using (interactiveMarker.Auto())
             {
-                return;
-            }
-
-            if (needsSnap)
-            {
-                view.SetZoomMeters(openZoomMeters, ComputeMaxZoomMeters(activeManager));
-                ApplyClampedCenter(activeManager.CarMapPosition, activeManager.Frame.Size);
-                needsSnap = false;
-                if (Opened != null)
+                NavigationManager activeManager = ResolveManagerWithFrame();
+                if (activeManager == null)
                 {
-                    Opened();
+                    return;
                 }
-            }
-            else if (isFollowingCar)
-            {
-                ApplyClampedCenter(activeManager.CarMapPosition, activeManager.Frame.Size);
-            }
-            else
-            {
-                ApplyClampedCenter(view.CenterMap, activeManager.Frame.Size);
-            }
 
-            view.SetRotation(0f);
+                if (needsSnap)
+                {
+                    view.SetZoomMeters(openZoomMeters, ComputeMaxZoomMeters(activeManager));
+                    ApplyClampedCenter(activeManager.CarMapPosition, activeManager.Frame.Size);
+                    needsSnap = false;
+                    if (Opened != null)
+                    {
+                        Opened();
+                    }
+                }
+                else if (isFollowingCar)
+                {
+                    ApplyClampedCenter(activeManager.CarMapPosition, activeManager.Frame.Size);
+                }
+                else
+                {
+                    ApplyClampedCenter(view.CenterMap, activeManager.Frame.Size);
+                }
 
-            crosshairLogic.Mode = crosshairMode;
-            bool crosshairActive = crosshairLogic.IsCrosshairActive;
-            if (crosshairActive != crosshairVisible)
-            {
-                ApplyCrosshairVisible(crosshairActive);
+                view.SetRotation(0f);
+
+                crosshairLogic.Mode = crosshairMode;
+                bool crosshairActive = crosshairLogic.IsCrosshairActive;
+                if (crosshairActive != crosshairVisible)
+                {
+                    ApplyCrosshairVisible(crosshairActive);
+                }
             }
         }
 

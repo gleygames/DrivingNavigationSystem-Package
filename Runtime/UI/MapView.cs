@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,8 @@ namespace Gley.NavigationSystem
         private readonly List<bool> lineDashed = new List<bool>();
         private readonly MapViewMath math = new MapViewMath();
         private readonly RouteLineData routeLineData = new RouteLineData();
+        private readonly ProfilerMarker viewMarker = new ProfilerMarker("Gley.Nav.MapView");
+        private readonly ProfilerMarker routeLineUpdateMarker = new ProfilerMarker("Gley.Nav.RouteLine.Update");
 
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
@@ -34,6 +37,7 @@ namespace Gley.NavigationSystem
         private RouteLineRenderer activeRouteRenderer;
         private RouteLineRenderer previewRouteRenderer;
         private MarkerLayer markerLayer;
+        private MapViewFollowCar followCar;
         private MapFrame currentFrame;
         private Vector2 centerMap;
         [SerializeField] private float zoomMeters = 300f;
@@ -52,6 +56,7 @@ namespace Gley.NavigationSystem
         internal RouteLineRenderer ActiveRouteRenderer { get { return activeRouteRenderer; } }
         internal RouteLineRenderer PreviewRouteRenderer { get { return previewRouteRenderer; } }
         internal MarkerLayer MarkerLayer { get { return markerLayer; } }
+        internal MapViewFollowCar FollowCar { get { return followCar; } }
         internal NavigationManager Manager { get { return cachedManager; } }
         internal RectTransform Viewport { get { return viewport; } }
         internal MapFrame Frame { get { return currentFrame; } }
@@ -86,6 +91,7 @@ namespace Gley.NavigationSystem
             found.PreviewFailed += HandlePreviewFailed;
             found.PreviewCanceled += HandlePreviewCanceled;
             HandleMapChanged(found.ActiveMap);
+            ShowCurrentRoutes(found);
         }
 
         private void LateUpdate()
@@ -95,16 +101,19 @@ namespace Gley.NavigationSystem
 
         public void UpdateMapViewVisuals(float deltaTime)
         {
-            if (content == null)
+            using (viewMarker.Auto())
             {
-                return;
-            }
+                if (content == null)
+                {
+                    return;
+                }
 
-            ApplyContainerPose();
-            UpdateRouteLineProperties();
-            if (markerLayer != null)
-            {
-                markerLayer.UpdateMarkerLayerVisuals(deltaTime);
+                ApplyContainerPose();
+                UpdateRouteLineProperties();
+                if (markerLayer != null)
+                {
+                    markerLayer.UpdateMarkerLayerVisuals(deltaTime);
+                }
             }
         }
 
@@ -121,6 +130,11 @@ namespace Gley.NavigationSystem
         public void SetZoomMeters(float meters, float maxZoomMeters)
         {
             zoomMeters = Mathf.Clamp(meters, minZoomMeters, maxZoomMeters);
+        }
+
+        internal void SetFollowCar(MapViewFollowCar value)
+        {
+            followCar = value;
         }
 
         internal void SetShowPreview(bool value)
@@ -352,6 +366,18 @@ namespace Gley.NavigationSystem
             ClearPreviewLine();
         }
 
+        private void ShowCurrentRoutes(NavigationManager found)
+        {
+            if (found.ActiveRoute != null)
+            {
+                RebuildActiveLine(found.ActiveRoute);
+            }
+            if (showPreview && found.PreviewRoute != null)
+            {
+                RebuildPreviewLine(found.PreviewRoute);
+            }
+        }
+
         private void HandleNavigationStarted(Route route)
         {
             RebuildActiveLine(route);
@@ -449,13 +475,16 @@ namespace Gley.NavigationSystem
 
         private void UpdateRouteLineProperties()
         {
-            float unitsPerMeter = CanvasUnitsPerMeter;
-            activeRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
-            previewRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
-
-            if (cachedManager != null)
+            using (routeLineUpdateMarker.Auto())
             {
-                activeRouteRenderer.SetTrimDistance(cachedManager.TrimDistance);
+                float unitsPerMeter = CanvasUnitsPerMeter;
+                activeRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
+                previewRouteRenderer.SetCanvasUnitsPerMeter(unitsPerMeter);
+
+                if (cachedManager != null)
+                {
+                    activeRouteRenderer.SetTrimDistance(cachedManager.TrimDistance);
+                }
             }
         }
 

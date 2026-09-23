@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Gley.Common;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
@@ -22,6 +23,9 @@ namespace Gley.NavigationSystem
         private readonly RouteRequest carRequest = new RouteRequest();
         private readonly RouteRequest generalRequest = new RouteRequest();
         private readonly MarkerRegistry markers = new MarkerRegistry();
+        private readonly ProfilerMarker managerMarker = new ProfilerMarker("Gley.Nav.Manager");
+        private readonly ProfilerMarker trackingMarker = new ProfilerMarker("Gley.Nav.Tracking");
+        private readonly ProfilerMarker markerRegistryMarker = new ProfilerMarker("Gley.Nav.MarkerRegistry");
 
         [SerializeField] private NavigationSettings settings;
         [SerializeField] private NavigationFormatter formatter;
@@ -186,29 +190,32 @@ namespace Gley.NavigationSystem
 
         private void UpdateNavigationLogic(float deltaTime)
         {
-            if (!IsInitialized)
+            using (managerMarker.Auto())
             {
-                return;
-            }
-
-            BeginDispatch();
-            try
-            {
-                if (deltaTime > 0f)
+                if (!IsInitialized)
                 {
-                    UpdateShiftLogic();
-                    UpdateCarLogic(deltaTime);
-                    UpdateTrackingLogic();
-                    UpdateMarkerRegistryLogic();
-                    UpdateRouteLogic();
-                    UpdatePreviewLogic();
-                    UpdateOutsideMapLogic();
+                    return;
                 }
-                UpdatePreferencesLogic();
-            }
-            finally
-            {
-                EndDispatch();
+
+                BeginDispatch();
+                try
+                {
+                    if (deltaTime > 0f)
+                    {
+                        UpdateShiftLogic();
+                        UpdateCarLogic(deltaTime);
+                        UpdateTrackingLogic();
+                        UpdateMarkerRegistryLogic();
+                        UpdateRouteLogic();
+                        UpdatePreviewLogic();
+                        UpdateOutsideMapLogic();
+                    }
+                    UpdatePreferencesLogic();
+                }
+                finally
+                {
+                    EndDispatch();
+                }
             }
         }
 
@@ -626,37 +633,40 @@ namespace Gley.NavigationSystem
 
         private void UpdateTrackingLogic()
         {
-            if (car == null || matcher == null)
+            using (trackingMarker.Auto())
             {
-                IsOffRoad = false;
-                CurrentRoadId = -1;
-                HasRoadHeading = false;
-                return;
-            }
+                if (car == null || matcher == null)
+                {
+                    IsOffRoad = false;
+                    CurrentRoadId = -1;
+                    HasRoadHeading = false;
+                    return;
+                }
 
-            bool wasOffRoad = IsOffRoad;
-            matcher.UpdateRoadMatchingLogic(CarTruePosition, motion.MovementHeading, motion.IsStopped, motion.Teleported);
-            UpdateRoadHeading();
+                bool wasOffRoad = IsOffRoad;
+                matcher.UpdateRoadMatchingLogic(CarTruePosition, motion.MovementHeading, motion.IsStopped, motion.Teleported);
+                UpdateRoadHeading();
 
-            IsOffRoad = !matcher.IsOnRoad;
-            if (matcher.IsOnRoad)
-            {
-                CurrentRoadId = roadNetwork.GetRoad(matcher.RoadIndex).Id;
-            }
-            else
-            {
-                CurrentRoadId = -1;
-            }
+                IsOffRoad = !matcher.IsOnRoad;
+                if (matcher.IsOnRoad)
+                {
+                    CurrentRoadId = roadNetwork.GetRoad(matcher.RoadIndex).Id;
+                }
+                else
+                {
+                    CurrentRoadId = -1;
+                }
 
-            CheckMisconfigurationWarning(!wasOffRoad);
+                CheckMisconfigurationWarning(!wasOffRoad);
 
-            if (IsOffRoad && !wasOffRoad)
-            {
-                RaiseOffRoad();
-            }
-            else if (!IsOffRoad && wasOffRoad)
-            {
-                RaiseBackOnRoad();
+                if (IsOffRoad && !wasOffRoad)
+                {
+                    RaiseOffRoad();
+                }
+                else if (!IsOffRoad && wasOffRoad)
+                {
+                    RaiseBackOnRoad();
+                }
             }
         }
 
@@ -775,12 +785,15 @@ namespace Gley.NavigationSystem
 
         private void UpdateMarkerRegistryLogic()
         {
-            if (car != null)
+            using (markerRegistryMarker.Auto())
             {
-                markers.EnsurePlayer(playerMarkerPrefab, MinimapChannelBit | FullMapChannelBit);
-                markers.SetPlayer(CarTruePosition, motion.NoseHeading);
+                if (car != null)
+                {
+                    markers.EnsurePlayer(playerMarkerPrefab, MinimapChannelBit | FullMapChannelBit);
+                    markers.SetPlayer(CarTruePosition, motion.NoseHeading);
+                }
+                markers.UpdateMarkerRegistryLogic(converter);
             }
-            markers.UpdateMarkerRegistryLogic(converter);
         }
 
         private void UpdateRouteLogic()
