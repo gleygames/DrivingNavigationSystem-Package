@@ -70,7 +70,7 @@ namespace Gley.NavigationSystem
                 MarkerEntry entry = manager.Markers.GetEntry(index);
 
                 Vector2 mapPoint = frame.TrueToMap(entry.TruePosition);
-                Vector2 viewportPoint = view.MapToViewport(mapPoint);
+                Vector2 viewportPoint = view.MapToViewport(mapPoint) - viewportRect.center;
 
                 bool showAsArrow = false;
                 Vector2 edgePoint = viewportPoint;
