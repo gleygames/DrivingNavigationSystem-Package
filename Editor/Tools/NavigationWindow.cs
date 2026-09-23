@@ -41,7 +41,11 @@ namespace Gley.NavigationSystem.Editor
         [MenuItem(NavigationWindowProperties.MenuItem, false, 0)]
         private static void OpenWindow()
         {
-            WindowLoader.LoadWindow<NavigationWindow>(new NavigationWindowProperties(), new NavigationVersion(), out _);
+            NavigationWindowProperties properties = new NavigationWindowProperties();
+            NavigationWindow window = EditorWindow.GetWindow<NavigationWindow>();
+            window.titleContent = new GUIContent(properties.WindowName + new NavigationVersion().LongVersion);
+            window.minSize = new Vector2(properties.MinWidth, properties.MinHeight);
+            window.Show();
         }
 
         private void OnEnable()

@@ -11,14 +11,16 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationSetupWindow : EditorWindow
     {
-        private const string PrefabFolder = "Assets/Gley/DrivingNavigationSystem/Graphics/Prefabs";
-        private const string MinimapPrefabPath = PrefabFolder + "/NavigationMinimap.prefab";
-        private const string FullMapPrefabPath = PrefabFolder + "/NavigationFullMap.prefab";
-        private const string PlayerMarkerPrefabPath = PrefabFolder + "/PlayerMarker.prefab";
-        private const string DestinationMarkerPrefabPath = PrefabFolder + "/DestinationMarker.prefab";
-        private const string PreviewPinPrefabPath = PrefabFolder + "/PreviewPin.prefab";
-        private const string DefaultFormatterPath = "Assets/Gley/DrivingNavigationSystem/Graphics/Presets/DefaultFormatter.asset";
-        private const string InputActionsPath = "Assets/Gley/DrivingNavigationSystem/Runtime.InputSystem/NavigationMapControls.inputactions";
+        private const string FallbackRootFolder = "Assets/Gley/DrivingNavigationSystem";
+        private static readonly string RootFolder = ResolveRootFolder();
+        private static readonly string PrefabFolder = RootFolder + "/Graphics/Prefabs";
+        private static readonly string MinimapPrefabPath = PrefabFolder + "/NavigationMinimap.prefab";
+        private static readonly string FullMapPrefabPath = PrefabFolder + "/NavigationFullMap.prefab";
+        private static readonly string PlayerMarkerPrefabPath = PrefabFolder + "/PlayerMarker.prefab";
+        private static readonly string DestinationMarkerPrefabPath = PrefabFolder + "/DestinationMarker.prefab";
+        private static readonly string PreviewPinPrefabPath = PrefabFolder + "/PreviewPin.prefab";
+        private static readonly string DefaultFormatterPath = RootFolder + "/Graphics/Presets/DefaultFormatter.asset";
+        private static readonly string InputActionsPath = RootFolder + "/Runtime.InputSystem/NavigationMapControls.inputactions";
         private const string GamepadAdapterTypeName = "Gley.NavigationSystem.InputSystem.GamepadInputAdapter, Gley.NavigationSystem.InputSystem";
         private const string InputSystemUIModuleTypeName = "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem";
         private const string InputSystemAssemblyName = "Unity.InputSystem";
@@ -57,7 +59,11 @@ namespace Gley.NavigationSystem.Editor
         [MenuItem(NavigationSetupWindowProperties.MenuItem, false, 1)]
         private static void OpenWindow()
         {
-            WindowLoader.LoadWindow<NavigationSetupWindow>(new NavigationSetupWindowProperties(), new NavigationVersion(), out _);
+            NavigationSetupWindowProperties properties = new NavigationSetupWindowProperties();
+            NavigationSetupWindow window = GetWindow<NavigationSetupWindow>();
+            window.titleContent = new GUIContent(properties.WindowName + new NavigationVersion().LongVersion);
+            window.minSize = new Vector2(properties.MinWidth, properties.MinHeight);
+            window.Show();
         }
 
         private void OnEnable()
@@ -467,7 +473,11 @@ namespace Gley.NavigationSystem.Editor
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Open Road Editor"))
             {
-                WindowLoader.LoadWindow<NavigationWindow>(new NavigationWindowProperties(), new NavigationVersion(), out _);
+                NavigationWindowProperties properties = new NavigationWindowProperties();
+                NavigationWindow window = EditorWindow.GetWindow<NavigationWindow>();
+                window.titleContent = new GUIContent(properties.WindowName + new NavigationVersion().LongVersion);
+                window.minSize = new Vector2(properties.MinWidth, properties.MinHeight);
+                window.Show();
             }
             if (GUILayout.Button("Validate"))
             {
@@ -577,6 +587,16 @@ namespace Gley.NavigationSystem.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             return canvas;
+        }
+
+        private static string ResolveRootFolder()
+        {
+            UnityEditor.PackageManager.PackageInfo package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(NavigationSetupWindow).Assembly);
+            if (package != null)
+            {
+                return package.assetPath;
+            }
+            return FallbackRootFolder;
         }
 
         private void AddMinimapAndFullMap(InputModuleChoice desired)
