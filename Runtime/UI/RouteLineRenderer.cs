@@ -163,6 +163,7 @@ namespace Gley.NavigationSystem
         {
             GameObject graphicObject = new GameObject("Chunk" + index, typeof(RectTransform));
             graphicObject.transform.SetParent(transform, false);
+            graphicObject.layer = gameObject.layer;
 
             RectTransform rectTransform = graphicObject.GetComponent<RectTransform>();
             rectTransform.pivot = Vector2.zero;

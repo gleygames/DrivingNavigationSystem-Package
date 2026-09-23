@@ -236,6 +236,7 @@ namespace Gley.NavigationSystem
         {
             GameObject backgroundObject = new GameObject("Background", typeof(RectTransform));
             backgroundObject.transform.SetParent(viewport, false);
+            backgroundObject.layer = viewport.gameObject.layer;
 
             RectTransform rectTransform = backgroundObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
@@ -251,6 +252,7 @@ namespace Gley.NavigationSystem
         {
             GameObject contentObject = new GameObject("Content", typeof(RectTransform));
             contentObject.transform.SetParent(viewport, false);
+            contentObject.layer = viewport.gameObject.layer;
 
             content = contentObject.GetComponent<RectTransform>();
             content.anchorMin = Vector2.zero;
@@ -262,6 +264,7 @@ namespace Gley.NavigationSystem
         {
             GameObject imageObject = new GameObject("MapImage", typeof(RectTransform));
             imageObject.transform.SetParent(content, false);
+            imageObject.layer = content.gameObject.layer;
 
             RectTransform rectTransform = imageObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
@@ -283,6 +286,7 @@ namespace Gley.NavigationSystem
         {
             GameObject routeObject = new GameObject(objectName, typeof(RectTransform));
             routeObject.transform.SetParent(content, false);
+            routeObject.layer = content.gameObject.layer;
 
             RectTransform rectTransform = routeObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
@@ -316,6 +320,7 @@ namespace Gley.NavigationSystem
         {
             GameObject markersObject = new GameObject("Markers", typeof(RectTransform));
             markersObject.transform.SetParent(viewport, false);
+            markersObject.layer = viewport.gameObject.layer;
 
             RectTransform rectTransform = markersObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
