@@ -12,15 +12,6 @@ namespace Gley.NavigationSystem.Editor
     public class NavigationSetupWindow : EditorWindow
     {
         private const string FallbackRootFolder = "Assets/Gley/DrivingNavigationSystem";
-        private static readonly string RootFolder = ResolveRootFolder();
-        private static readonly string PrefabFolder = RootFolder + "/Graphics/Prefabs";
-        private static readonly string MinimapPrefabPath = PrefabFolder + "/NavigationMinimap.prefab";
-        private static readonly string FullMapPrefabPath = PrefabFolder + "/NavigationFullMap.prefab";
-        private static readonly string PlayerMarkerPrefabPath = PrefabFolder + "/PlayerMarker.prefab";
-        private static readonly string DestinationMarkerPrefabPath = PrefabFolder + "/DestinationMarker.prefab";
-        private static readonly string PreviewPinPrefabPath = PrefabFolder + "/PreviewPin.prefab";
-        private static readonly string DefaultFormatterPath = RootFolder + "/Graphics/Presets/DefaultFormatter.asset";
-        private static readonly string InputActionsPath = RootFolder + "/Runtime.InputSystem/NavigationMapControls.inputactions";
         private const string GamepadAdapterTypeName = "Gley.NavigationSystem.InputSystem.GamepadInputAdapter, Gley.NavigationSystem.InputSystem";
         private const string InputSystemUIModuleTypeName = "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem";
         private const string InputSystemAssemblyName = "Unity.InputSystem";
@@ -56,6 +47,15 @@ namespace Gley.NavigationSystem.Editor
         private Vector2 scrollPosition;
         private string mapFolder;
         private string mapName;
+        private string rootFolder;
+        private string prefabFolder;
+        private string minimapPrefabPath;
+        private string fullMapPrefabPath;
+        private string playerMarkerPrefabPath;
+        private string destinationMarkerPrefabPath;
+        private string previewPinPrefabPath;
+        private string defaultFormatterPath;
+        private string inputActionsPath;
         private float pendingYawOffset;
         private bool carSpawnedAtRuntime;
 
@@ -71,6 +71,7 @@ namespace Gley.NavigationSystem.Editor
 
         private void OnEnable()
         {
+            ResolvePaths();
             locator = new NavigationAssetLocator();
             evaluator = new SetupStatusEvaluator();
             bakeStatus = new BakeStatus();
@@ -90,6 +91,19 @@ namespace Gley.NavigationSystem.Editor
             RunOneTimeChecks();
 
             SceneView.duringSceneGui += HandleSceneGUI;
+        }
+
+        private void ResolvePaths()
+        {
+            rootFolder = ResolveRootFolder();
+            prefabFolder = rootFolder + "/Graphics/Prefabs";
+            minimapPrefabPath = prefabFolder + "/NavigationMinimap.prefab";
+            fullMapPrefabPath = prefabFolder + "/NavigationFullMap.prefab";
+            playerMarkerPrefabPath = prefabFolder + "/PlayerMarker.prefab";
+            destinationMarkerPrefabPath = prefabFolder + "/DestinationMarker.prefab";
+            previewPinPrefabPath = prefabFolder + "/PreviewPin.prefab";
+            defaultFormatterPath = rootFolder + "/Graphics/Presets/DefaultFormatter.asset";
+            inputActionsPath = rootFolder + "/Runtime.InputSystem/NavigationMapControls.inputactions";
         }
 
         private void RefreshState()
@@ -141,9 +155,9 @@ namespace Gley.NavigationSystem.Editor
 
             SerializedObject serializedManager = new SerializedObject(managerInScene);
             bool changed = false;
-            changed |= AssignPrefabIfMissing(serializedManager, "playerMarkerPrefab", PlayerMarkerPrefabPath);
-            changed |= AssignPrefabIfMissing(serializedManager, "destinationMarkerPrefab", DestinationMarkerPrefabPath);
-            changed |= AssignPrefabIfMissing(serializedManager, "previewPinPrefab", PreviewPinPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedManager, "playerMarkerPrefab", playerMarkerPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedManager, "destinationMarkerPrefab", destinationMarkerPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedManager, "previewPinPrefab", previewPinPrefabPath);
             if (changed)
             {
                 serializedManager.ApplyModifiedPropertiesWithoutUndo();
@@ -363,7 +377,7 @@ namespace Gley.NavigationSystem.Editor
             NavigationManager manager = managerObject.AddComponent<NavigationManager>();
             manager.SetSettings(settings);
 
-            DefaultNavigationFormatter formatter = AssetDatabase.LoadAssetAtPath<DefaultNavigationFormatter>(DefaultFormatterPath);
+            DefaultNavigationFormatter formatter = AssetDatabase.LoadAssetAtPath<DefaultNavigationFormatter>(defaultFormatterPath);
             if (formatter != null)
             {
                 formatter.SetSettings(settings);
@@ -605,7 +619,7 @@ namespace Gley.NavigationSystem.Editor
             return canvas;
         }
 
-        private static string ResolveRootFolder()
+        private string ResolveRootFolder()
         {
             UnityEditor.PackageManager.PackageInfo package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(NavigationSetupWindow).Assembly);
             if (package != null)
@@ -623,11 +637,11 @@ namespace Gley.NavigationSystem.Editor
             }
             EnsureEventSystem(desired);
 
-            GameObject minimapPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(MinimapPrefabPath);
-            GameObject fullMapPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FullMapPrefabPath);
+            GameObject minimapPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(minimapPrefabPath);
+            GameObject fullMapPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fullMapPrefabPath);
             if (minimapPrefab == null || fullMapPrefab == null)
             {
-                CustomLogger.LogError("NavigationSetupWindow: default prefabs are missing from " + PrefabFolder + ". Reimport the Driving Navigation System package.");
+                CustomLogger.LogError("NavigationSetupWindow: default prefabs are missing from " + prefabFolder + ". Reimport the Driving Navigation System package.");
                 return;
             }
 
@@ -683,7 +697,7 @@ namespace Gley.NavigationSystem.Editor
             Component adapter = fullMapObject.AddComponent(adapterType);
             Undo.RegisterCreatedObjectUndo(adapter, "Add Gamepad Adapter");
 
-            UnityEngine.Object actionsAsset = AssetDatabase.LoadAssetAtPath(InputActionsPath, typeof(UnityEngine.Object));
+            UnityEngine.Object actionsAsset = AssetDatabase.LoadAssetAtPath(inputActionsPath, typeof(UnityEngine.Object));
 
             SerializedObject serializedAdapter = new SerializedObject(adapter);
             serializedAdapter.FindProperty("actions").objectReferenceValue = actionsAsset;
