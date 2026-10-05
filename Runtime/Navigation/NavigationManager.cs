@@ -23,17 +23,14 @@ namespace Gley.NavigationSystem
         private readonly RouteRequest carRequest = new RouteRequest();
         private readonly RouteRequest generalRequest = new RouteRequest();
         private readonly MarkerRegistry markers = new MarkerRegistry();
+        private readonly NavigationRuntimeSettings defaultRuntimeSettings = new NavigationRuntimeSettings();
         private readonly ProfilerMarker managerMarker = new ProfilerMarker("Gley.Nav.Manager");
         private readonly ProfilerMarker trackingMarker = new ProfilerMarker("Gley.Nav.Tracking");
         private readonly ProfilerMarker markerRegistryMarker = new ProfilerMarker("Gley.Nav.MarkerRegistry");
 
         [SerializeField] private NavigationSettings settings;
-        [SerializeField] private NavigationFormatter formatter;
         [SerializeField] private NavigationMap explicitMap;
         [SerializeField] private Transform car;
-        [SerializeField] private GameObject playerMarkerPrefab;
-        [SerializeField] private GameObject destinationMarkerPrefab;
-        [SerializeField] private GameObject previewPinPrefab;
         [SerializeField] private ShiftSource shiftSource = ShiftSource.Rectangle;
         [SerializeField] private RouteMode routeMode = RouteMode.Shortest;
         [SerializeField] private UTurnRule uTurnRule = UTurnRule.Never;
@@ -50,21 +47,11 @@ namespace Gley.NavigationSystem
         private Route previewRoute;
         private Route scratchRoute;
         private NavigationFormatter ownedFormatter;
+        private NavigationFormatter formatter;
         private Vector3 activeDestination;
         private Vector3 previewDestination;
         private MapMarker previewMarker;
         [SerializeField] private float carYawOffset;
-        [SerializeField] private float avoidMultiplier = 5f;
-        [SerializeField] private float preferMultiplier = 0.7f;
-        [SerializeField] private float startSnapDistance = 200f;
-        [SerializeField] private float destinationSnapDistance = 50f;
-        [SerializeField] private float arrivalDistance = 10f;
-        [SerializeField] private float turnedAroundDistance = 30f;
-        [SerializeField] private float rerouteCooldown = 20f;
-        [SerializeField] private float minHeadingSpeed = 1f;
-        [SerializeField] private float stoppedSpeed = 0.1f;
-        [SerializeField] private float teleportDistance = 50f;
-        [SerializeField] private float leaveMargin = 3f;
         private float drivenDistance;
         private float roadHeadingSign = 1f;
         private int dispatchDepth;
@@ -99,6 +86,21 @@ namespace Gley.NavigationSystem
 
         public NavigationMap ActiveMap { get; private set; }
         public Transform Car { get { return car; } }
+        internal NavigationSettings Settings { get { return settings; } }
+        internal NavigationRuntimeSettings RuntimeSettings
+        {
+            get
+            {
+                if (settings != null)
+                {
+                    return settings.Runtime;
+                }
+                else
+                {
+                    return defaultRuntimeSettings;
+                }
+            }
+        }
         public float CarYawOffset { get { return carYawOffset; } }
         public Route ActiveRoute
         {
@@ -240,14 +242,14 @@ namespace Gley.NavigationSystem
 
             EnsureFormatter();
 
-            motion.TeleportDistance = teleportDistance;
-            motion.StoppedSpeed = stoppedSpeed;
-            motion.MinHeadingSpeed = minHeadingSpeed;
+            motion.TeleportDistance = RuntimeSettings.TeleportDistance;
+            motion.StoppedSpeed = RuntimeSettings.StoppedSpeed;
+            motion.MinHeadingSpeed = RuntimeSettings.MinHeadingSpeed;
 
             preferences.Mode = routeMode;
             preferences.UTurn = uTurnRule;
-            preferences.AvoidMultiplier = avoidMultiplier;
-            preferences.PreferMultiplier = preferMultiplier;
+            preferences.AvoidMultiplier = RuntimeSettings.AvoidMultiplier;
+            preferences.PreferMultiplier = RuntimeSettings.PreferMultiplier;
 
             ApplySnapDistances(carRequest);
             ApplySnapDistances(generalRequest);
@@ -290,6 +292,10 @@ namespace Gley.NavigationSystem
 
         private void EnsureFormatter()
         {
+            if (formatter == null)
+            {
+                formatter = RuntimeSettings.Formatter;
+            }
             if (formatter == null)
             {
                 AssignDefaultFormatter();
@@ -519,21 +525,6 @@ namespace Gley.NavigationSystem
             car = value;
             carYawOffset = yawOffset;
             carNeedsReset = true;
-        }
-
-        internal void SetPlayerMarkerPrefab(GameObject value)
-        {
-            playerMarkerPrefab = value;
-        }
-
-        internal void SetDestinationMarkerPrefab(GameObject value)
-        {
-            destinationMarkerPrefab = value;
-        }
-
-        internal void SetPreviewPinPrefab(GameObject value)
-        {
-            previewPinPrefab = value;
         }
 
         internal void SetStartManually(bool value)
@@ -768,7 +759,7 @@ namespace Gley.NavigationSystem
             }
 
             RoadPoint nearestPoint;
-            bool foundNearbyRoad = roadQuery.FindNearest(CarTruePosition, startSnapDistance, out nearestPoint);
+            bool foundNearbyRoad = roadQuery.FindNearest(CarTruePosition, RuntimeSettings.StartSnapDistance, out nearestPoint);
 
             bool outsideMap = false;
             if (Frame != null)
@@ -791,7 +782,7 @@ namespace Gley.NavigationSystem
             {
                 if (car != null)
                 {
-                    markers.EnsurePlayer(playerMarkerPrefab, MinimapChannelBit | FullMapChannelBit);
+                    markers.EnsurePlayer(RuntimeSettings.PlayerMarkerPrefab, MinimapChannelBit | FullMapChannelBit);
                     markers.SetPlayer(CarTruePosition, motion.NoseHeading);
                 }
                 markers.UpdateMarkerRegistryLogic(converter);
@@ -1109,9 +1100,9 @@ namespace Gley.NavigationSystem
 
         private void ApplySnapDistances(RouteRequest request)
         {
-            request.StartSnapDistance = startSnapDistance;
-            request.DestinationSnapDistance = destinationSnapDistance;
-            request.ArrivalDistance = arrivalDistance;
+            request.StartSnapDistance = RuntimeSettings.StartSnapDistance;
+            request.DestinationSnapDistance = RuntimeSettings.DestinationSnapDistance;
+            request.ArrivalDistance = RuntimeSettings.ArrivalDistance;
         }
 
         private bool AddRegisteredMap(NavigationMap map)
@@ -1203,14 +1194,14 @@ namespace Gley.NavigationSystem
                 pathfinder = new Pathfinder(network);
 
                 matcher = new RoadMatcher(network);
-                matcher.LeaveMargin = leaveMargin;
+                matcher.LeaveMargin = RuntimeSettings.LeaveMargin;
 
                 session = new NavigationSession();
-                session.ArrivalDistance = arrivalDistance;
+                session.ArrivalDistance = RuntimeSettings.ArrivalDistance;
 
                 decider = new RerouteDecider();
-                decider.RerouteCooldown = rerouteCooldown;
-                decider.TurnedAroundDistance = turnedAroundDistance;
+                decider.RerouteCooldown = RuntimeSettings.RerouteCooldown;
+                decider.TurnedAroundDistance = RuntimeSettings.TurnedAroundDistance;
 
                 activeRoute = CreateRoute();
                 previewRoute = CreateRoute();
@@ -1597,7 +1588,7 @@ namespace Gley.NavigationSystem
         {
             if (destinationMarkerIndex < 0)
             {
-                destinationMarkerIndex = markers.AddPoint(truePosition, destinationMarkerPrefab, MinimapChannelBit | FullMapChannelBit, true);
+                destinationMarkerIndex = markers.AddPoint(truePosition, RuntimeSettings.DestinationMarkerPrefab, MinimapChannelBit | FullMapChannelBit, true);
             }
             else
             {
@@ -1619,7 +1610,7 @@ namespace Gley.NavigationSystem
         {
             if (previewMarkerIndex < 0)
             {
-                previewMarkerIndex = markers.AddPoint(truePosition, previewPinPrefab, FullMapChannelBit, false);
+                previewMarkerIndex = markers.AddPoint(truePosition, RuntimeSettings.PreviewPinPrefab, FullMapChannelBit, false);
             }
             else
             {

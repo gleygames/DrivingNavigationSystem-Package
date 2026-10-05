@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEngine;
 
 namespace Gley.NavigationSystem.Editor
 {
@@ -20,6 +21,18 @@ namespace Gley.NavigationSystem.Editor
             }
 
             EditorGUILayout.PropertyField(property);
+        }
+
+        internal void DrawProperty(SerializedObject serializedObject, string path, string label)
+        {
+            SerializedProperty property = serializedObject.FindProperty(path);
+            if (property == null)
+            {
+                EditorGUILayout.HelpBox("Missing property: " + path, MessageType.Error);
+                return;
+            }
+
+            EditorGUILayout.PropertyField(property, new GUIContent(label));
         }
 
         internal void DrawProperties(SerializedObject serializedObject, string[] paths)

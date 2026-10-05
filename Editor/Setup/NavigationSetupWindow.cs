@@ -138,36 +138,55 @@ namespace Gley.NavigationSystem.Editor
 
             if (managerInScene != null)
             {
+                if (managerInScene.Settings == null)
+                {
+                    managerInScene.SetSettings(settings);
+                    EditorUtility.SetDirty(managerInScene);
+                }
+
                 SerializedObject serializedManager = new SerializedObject(managerInScene);
                 pendingYawOffset = serializedManager.FindProperty("carYawOffset").floatValue;
                 carSpawnedAtRuntime = serializedManager.FindProperty("carSpawnedAtRuntime").boolValue;
             }
 
-            EnsureMarkerPrefabs();
+            EnsureSettingsDefaults();
         }
 
-        private void EnsureMarkerPrefabs()
+        private void EnsureSettingsDefaults()
         {
-            if (managerInScene == null)
+            if (settings == null)
             {
                 return;
             }
 
-            SerializedObject serializedManager = new SerializedObject(managerInScene);
+            SerializedObject serializedObject = new SerializedObject(settings);
             bool changed = false;
-            changed |= AssignPrefabIfMissing(serializedManager, "playerMarkerPrefab", playerMarkerPrefabPath);
-            changed |= AssignPrefabIfMissing(serializedManager, "destinationMarkerPrefab", destinationMarkerPrefabPath);
-            changed |= AssignPrefabIfMissing(serializedManager, "previewPinPrefab", previewPinPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedObject, "runtime.playerMarkerPrefab", playerMarkerPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedObject, "runtime.destinationMarkerPrefab", destinationMarkerPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedObject, "runtime.previewPinPrefab", previewPinPrefabPath);
+            SerializedProperty formatterProperty = serializedObject.FindProperty("runtime.formatter");
+            if (formatterProperty.objectReferenceValue == null)
+            {
+                DefaultNavigationFormatter formatter = AssetDatabase.LoadAssetAtPath<DefaultNavigationFormatter>(defaultFormatterPath);
+                if (formatter != null)
+                {
+                    formatterProperty.objectReferenceValue = formatter;
+                    formatter.SetSettings(settings);
+                    EditorUtility.SetDirty(formatter);
+                    changed = true;
+                }
+            }
+
             if (changed)
             {
-                serializedManager.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(managerInScene);
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(settings);
             }
         }
 
-        private bool AssignPrefabIfMissing(SerializedObject serializedManager, string fieldName, string prefabPath)
+        private bool AssignPrefabIfMissing(SerializedObject serializedObject, string fieldName, string prefabPath)
         {
-            SerializedProperty property = serializedManager.FindProperty(fieldName);
+            SerializedProperty property = serializedObject.FindProperty(fieldName);
             if (property.objectReferenceValue != null)
             {
                 return false;
@@ -376,13 +395,6 @@ namespace Gley.NavigationSystem.Editor
             Undo.RegisterCreatedObjectUndo(managerObject, "Create Navigation Manager");
             NavigationManager manager = managerObject.AddComponent<NavigationManager>();
             manager.SetSettings(settings);
-
-            DefaultNavigationFormatter formatter = AssetDatabase.LoadAssetAtPath<DefaultNavigationFormatter>(defaultFormatterPath);
-            if (formatter != null)
-            {
-                formatter.SetSettings(settings);
-                manager.SetFormatter(formatter);
-            }
 
             managerInScene = manager;
         }

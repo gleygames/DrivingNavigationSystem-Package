@@ -10,6 +10,7 @@ namespace Gley.NavigationSystem
 
         [SerializeField] private List<RoadType> roadTypes = new List<RoadType>();
         [SerializeField] private string[] viewChannelNames = new string[ChannelCount];
+        [SerializeField] private NavigationRuntimeSettings runtime = new NavigationRuntimeSettings();
         [SerializeField] private float unitsPerMeter = 1f;
         [SerializeField] private int formatVersion = CurrentFormatVersion;
         [SerializeField] private int nextRoadTypeId;
@@ -18,6 +19,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private bool imperialUnits;
 
         public IReadOnlyList<RoadType> RoadTypes { get { return roadTypes; } }
+        public NavigationRuntimeSettings Runtime { get { return runtime; } }
         public float UnitsPerMeter { get { return unitsPerMeter; } }
         public int FormatVersion { get { return formatVersion; } }
         int IFormatVersioned.CurrentFormatVersion { get { return CurrentFormatVersion; } }
@@ -47,6 +49,7 @@ namespace Gley.NavigationSystem
             unitsPerMeter = 1f;
             formatVersion = CurrentFormatVersion;
             version = 0;
+            runtime.ResetTuningToDefaults();
         }
 
         public RoadType AddRoadType(string name)
