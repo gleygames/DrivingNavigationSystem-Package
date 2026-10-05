@@ -1,4 +1,5 @@
 using System.Text;
+using Gley.Common;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,6 +28,10 @@ namespace Gley.NavigationSystem
                 found.PreviewFailed += HandlePreviewFailed;
                 found.PreviewCanceled += HandlePreviewCanceled;
                 found.NavigationStarted += HandleNavigationStarted;
+            }
+            else
+            {
+                CustomLogger.LogError("PreviewPanel on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
             }
 
             if (confirmButton != null)

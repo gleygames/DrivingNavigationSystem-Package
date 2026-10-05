@@ -1,3 +1,4 @@
+using Gley.Common;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -29,6 +30,12 @@ namespace Gley.NavigationSystem
 
             if (fullMap == null)
             {
+                fullMap = FindAnyObjectByType<MapViewInteractive>(FindObjectsInactive.Include);
+            }
+
+            if (fullMap == null)
+            {
+                CustomLogger.LogError("MinimapTapToOpen on '" + name + "': no full map (MapViewInteractive) found in the loaded scenes.", this);
                 return;
             }
 

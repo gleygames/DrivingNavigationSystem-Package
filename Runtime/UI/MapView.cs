@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Gley.Common;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
@@ -49,6 +50,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private bool showOffScreenArrows = true;
         [SerializeField] private bool showArrowDistance = true;
         private bool hierarchyBuilt;
+        private bool hasManager;
 
         public Vector2 CenterMap { get { return centerMap; } }
         internal Image BackgroundImage { get { return backgroundImage; } }
@@ -77,10 +79,12 @@ namespace Gley.NavigationSystem
             NavigationManager found = FindManager();
             if (found == null)
             {
+                CustomLogger.LogError("MapView on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
                 return;
             }
 
             cachedManager = found;
+            hasManager = true;
             found.MapChanged += HandleMapChanged;
             found.NavigationStarted += HandleNavigationStarted;
             found.Rerouted += HandleRerouted;
@@ -106,6 +110,11 @@ namespace Gley.NavigationSystem
                 if (content == null)
                 {
                     return;
+                }
+
+                if (hasManager && cachedManager == null)
+                {
+                    HandleManagerLost();
                 }
 
                 ApplyContainerPose();
@@ -465,6 +474,30 @@ namespace Gley.NavigationSystem
             previewRouteRenderer.SetLine(emptyPoints, emptyDistances, emptyDashed);
         }
 
+        private void HandleManagerLost()
+        {
+            CustomLogger.LogError("MapView on '" + name + "': the NavigationManager was destroyed. The UI must not outlive the Manager.", this);
+            UnsubscribeFromManager(cachedManager);
+            ClearActiveLine();
+            ClearPreviewLine();
+            currentFrame = null;
+            cachedManager = null;
+            hasManager = false;
+        }
+
+        private void UnsubscribeFromManager(NavigationManager target)
+        {
+            target.MapChanged -= HandleMapChanged;
+            target.NavigationStarted -= HandleNavigationStarted;
+            target.Rerouted -= HandleRerouted;
+            target.Arrived -= HandleArrived;
+            target.NavigationStopped -= HandleNavigationStopped;
+            target.RouteFailed -= HandleRouteFailed;
+            target.PreviewReady -= HandlePreviewReady;
+            target.PreviewFailed -= HandlePreviewFailed;
+            target.PreviewCanceled -= HandlePreviewCanceled;
+        }
+
         private void ApplyContainerPose()
         {
             MapViewPose pose = ComputePose();
@@ -512,20 +545,13 @@ namespace Gley.NavigationSystem
 
         private void OnDisable()
         {
+            hasManager = false;
             if (cachedManager == null)
             {
                 return;
             }
 
-            cachedManager.MapChanged -= HandleMapChanged;
-            cachedManager.NavigationStarted -= HandleNavigationStarted;
-            cachedManager.Rerouted -= HandleRerouted;
-            cachedManager.Arrived -= HandleArrived;
-            cachedManager.NavigationStopped -= HandleNavigationStopped;
-            cachedManager.RouteFailed -= HandleRouteFailed;
-            cachedManager.PreviewReady -= HandlePreviewReady;
-            cachedManager.PreviewFailed -= HandlePreviewFailed;
-            cachedManager.PreviewCanceled -= HandlePreviewCanceled;
+            UnsubscribeFromManager(cachedManager);
             cachedManager = null;
         }
     }

@@ -1,3 +1,4 @@
+using Gley.Common;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,6 +29,10 @@ namespace Gley.NavigationSystem
                 found.Arrived += HandleArrived;
                 found.NavigationStopped += HandleNavigationStopped;
                 found.RouteFailed += HandleRouteFailed;
+            }
+            else
+            {
+                CustomLogger.LogError("NavigationControls on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
             }
 
             if (stopButton != null)

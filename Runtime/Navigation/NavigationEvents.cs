@@ -1,4 +1,5 @@
 using System;
+using Gley.Common;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -59,6 +60,7 @@ namespace Gley.NavigationSystem
             NavigationManager found = FindManager();
             if (found == null)
             {
+                CustomLogger.LogError("NavigationEvents on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
                 return;
             }
 
