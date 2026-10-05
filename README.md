@@ -25,6 +25,8 @@ Car spawned at runtime: turn on **Car spawned at runtime** in setup step 5, then
 
 All state-changing methods are safe to call from inside event callbacks. Calls made during event dispatch are queued and run afterwards.
 
+The default UI prefabs stretch to fill their parent and don't handle the screen safe area. On devices with notches, place them inside your HUD's safe-area container.
+
 ## Index
 
 | Area | Types |
@@ -339,7 +341,7 @@ Struct describing one road piece of a route.
 | `DefaultNavigationFormatter` | Metric or imperial output following `NavigationSettings.ImperialUnits`. |
 | `NavigationTextTarget` | Abstract `MonoBehaviour`. Override `SetText(StringBuilder text)` to display navigation text in your own UI. |
 | `LegacyTextTarget` | Writes to a `UnityEngine.UI.Text`. |
-| `NavigationControls`, `CompassButton`, `PreviewPanel`, `SafeAreaFitter`, `MarkerLayer` | Prefab components. Configure in the Inspector, no scripting needed. |
+| `NavigationControls`, `CompassButton`, `PreviewPanel`, `MarkerLayer` | Prefab components. Configure in the Inspector, no scripting needed. |
 
 ## RouteStyle
 
