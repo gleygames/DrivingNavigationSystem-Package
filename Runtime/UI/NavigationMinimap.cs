@@ -13,7 +13,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private MinimapFollowSettings followSettings = new MinimapFollowSettings();
         [SerializeField] private MinimapShapeSettings shapeSettings = new MinimapShapeSettings();
         [SerializeField] private MinimapTapAction tapAction = MinimapTapAction.OpenFullMap;
-        [SerializeField] private MapViewInteractive fullMap;
+        [SerializeField] private NavigationFullMap fullMap;
         [SerializeField] private Button compassButton;
         [SerializeField] private RectTransform compassIcon;
         private MapView view;
@@ -76,7 +76,7 @@ namespace Gley.NavigationSystem
             tapAction = value;
         }
 
-        public void SetFullMap(MapViewInteractive value)
+        public void SetFullMap(NavigationFullMap value)
         {
             fullMap = value;
         }
@@ -90,7 +90,7 @@ namespace Gley.NavigationSystem
 
             if (fullMap == null)
             {
-                fullMap = FindAnyObjectByType<MapViewInteractive>(FindObjectsInactive.Include);
+                fullMap = FindAnyObjectByType<NavigationFullMap>(FindObjectsInactive.Include);
             }
 
             if (fullMap == null)

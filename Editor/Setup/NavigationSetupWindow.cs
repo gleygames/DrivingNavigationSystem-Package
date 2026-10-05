@@ -525,7 +525,7 @@ namespace Gley.NavigationSystem.Editor
         private void DrawStep4Ui()
         {
             bool minimapPresent = FindAnyObjectByType<NavigationMinimap>(FindObjectsInactive.Include) != null;
-            bool fullMapPresent = FindAnyObjectByType<MapViewInteractive>(FindObjectsInactive.Include) != null;
+            bool fullMapPresent = FindAnyObjectByType<NavigationFullMap>(FindObjectsInactive.Include) != null;
             InputModuleChoice desiredModule = ComputeDesiredInputModule();
             EventSystem existingEventSystem = FindAnyObjectByType<EventSystem>();
             bool eventSystemMismatch = false;
@@ -651,15 +651,15 @@ namespace Gley.NavigationSystem.Editor
             Undo.RegisterCreatedObjectUndo(fullMapInstance, "Add Full Map");
 
             NavigationMinimap minimap = minimapInstance.GetComponent<NavigationMinimap>();
-            MapViewInteractive interactive = fullMapInstance.GetComponentInChildren<MapViewInteractive>(true);
-            if (minimap != null && interactive != null)
+            NavigationFullMap fullMap = fullMapInstance.GetComponent<NavigationFullMap>();
+            if (minimap != null && fullMap != null)
             {
-                minimap.SetFullMap(interactive);
+                minimap.SetFullMap(fullMap);
             }
 
-            if (interactive != null && IsAssemblyPresent(InputSystemAssemblyName))
+            if (fullMap != null && IsAssemblyPresent(InputSystemAssemblyName))
             {
-                AddGamepadAdapter(interactive.gameObject);
+                AddGamepadAdapter(fullMapInstance);
             }
         }
 
@@ -701,7 +701,7 @@ namespace Gley.NavigationSystem.Editor
 
             SerializedObject serializedAdapter = new SerializedObject(adapter);
             serializedAdapter.FindProperty("actions").objectReferenceValue = actionsAsset;
-            serializedAdapter.FindProperty("target").objectReferenceValue = fullMapObject.GetComponent<MapViewInteractive>();
+            serializedAdapter.FindProperty("target").objectReferenceValue = fullMapObject.GetComponent<NavigationFullMap>();
             serializedAdapter.FindProperty("manager").objectReferenceValue = managerInScene;
             serializedAdapter.ApplyModifiedPropertiesWithoutUndo();
         }

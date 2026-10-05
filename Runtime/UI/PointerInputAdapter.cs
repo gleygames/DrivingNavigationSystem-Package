@@ -3,59 +3,66 @@ using UnityEngine.EventSystems;
 
 namespace Gley.NavigationSystem
 {
-    [RequireComponent(typeof(MapViewInteractive))]
-    public class PointerInputAdapter : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IScrollHandler, IPointerClickHandler
+    internal class PointerInputAdapter
     {
-        private GestureTracker tracker;
-        private MapViewInteractive target;
-        private RectTransform viewportRect;
+        private readonly GestureTracker tracker;
+        private readonly MapViewInteractive target;
+        private readonly RectTransform viewport;
+        private readonly FullMapInteractionSettings settings;
 
-        private void OnEnable()
+        internal GestureTracker Tracker { get { return tracker; } }
+
+        internal PointerInputAdapter(MapViewInteractive target, RectTransform viewport, FullMapInteractionSettings settings)
         {
-            target = GetComponent<MapViewInteractive>();
-            viewportRect = GetComponent<RectTransform>();
+            this.target = target;
+            this.viewport = viewport;
+            this.settings = settings;
             tracker = new GestureTracker(target);
         }
 
-        private void Update()
+        internal void UpdatePointerInputLogic(float time, float deltaTime)
         {
-            tracker.UpdateGestureLogic(Time.unscaledTime, Time.unscaledDeltaTime);
+            ApplySettings();
+            tracker.UpdateGestureLogic(time, deltaTime);
         }
 
-        public void OnPointerDown(PointerEventData eventData)
+        internal void ApplySettings()
         {
+            tracker.MouseWheelStep = settings.MouseWheelStep;
+            tracker.DoubleTapStep = settings.DoubleTapStep;
+            tracker.DoubleTapEnabled = settings.DoubleTapZoom;
+            tracker.FlingEnabled = settings.Fling;
+        }
+
+        internal void HandlePointerDown(PointerEventData eventData)
+        {
+            ApplySettings();
             target.NotifyPointerInput();
             tracker.PointerDown(eventData.pointerId, ToViewportLocal(eventData), Time.unscaledTime);
         }
 
-        public void OnBeginDrag(PointerEventData eventData)
+        internal void HandleBeginDrag(PointerEventData eventData)
         {
+            ApplySettings();
             tracker.PointerMove(eventData.pointerId, ToViewportLocal(eventData), Time.unscaledTime);
         }
 
-        public void OnDrag(PointerEventData eventData)
+        internal void HandleDrag(PointerEventData eventData)
         {
+            ApplySettings();
             tracker.PointerMove(eventData.pointerId, ToViewportLocal(eventData), Time.unscaledTime);
         }
 
-        public void OnEndDrag(PointerEventData eventData)
+        internal void HandlePointerUp(PointerEventData eventData)
         {
-        }
-
-        public void OnPointerUp(PointerEventData eventData)
-        {
-            tracker.DoubleTapStep = target.DoubleTapStep;
+            ApplySettings();
             tracker.PointerUp(eventData.pointerId, ToViewportLocal(eventData), Time.unscaledTime, !eventData.dragging);
         }
 
-        public void OnPointerClick(PointerEventData eventData)
+        internal void HandleScroll(PointerEventData eventData)
         {
-        }
-
-        public void OnScroll(PointerEventData eventData)
-        {
+            ApplySettings();
             target.NotifyPointerInput();
-            tracker.MouseWheelStep = target.MouseWheelStep;
             tracker.Scroll(eventData.scrollDelta.y, ToViewportLocal(eventData));
         }
 
@@ -68,7 +75,7 @@ namespace Gley.NavigationSystem
             }
 
             Vector2 localPoint;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(viewportRect, eventData.position, eventCamera, out localPoint);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport, eventData.position, eventCamera, out localPoint);
             return localPoint;
         }
     }

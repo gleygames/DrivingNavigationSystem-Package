@@ -6,7 +6,7 @@ namespace Gley.NavigationSystem.InputSystem
     public class GamepadInputAdapter : MonoBehaviour
     {
         [SerializeField] private InputActionAsset actions;
-        [SerializeField] private MapViewInteractive target;
+        [SerializeField] private NavigationFullMap target;
         [SerializeField] private NavigationManager manager;
         private NavigationManager cachedManager;
         private InputActionMap map;
@@ -19,6 +19,11 @@ namespace Gley.NavigationSystem.InputSystem
 
         private void OnEnable()
         {
+            if (target == null)
+            {
+                target = GetComponent<NavigationFullMap>();
+            }
+
             if (actions == null)
             {
                 return;
@@ -64,7 +69,7 @@ namespace Gley.NavigationSystem.InputSystem
 
         public void UpdateGamepadInputLogic(float deltaTime)
         {
-            if (target == null)
+            if (target == null || target.Interactive == null)
             {
                 return;
             }
@@ -74,7 +79,7 @@ namespace Gley.NavigationSystem.InputSystem
                 Vector2 pan = panAction.ReadValue<Vector2>();
                 if (pan != Vector2.zero)
                 {
-                    target.PanByStick(pan, deltaTime);
+                    target.Interactive.PanByStick(pan, deltaTime);
                 }
             }
 
@@ -83,14 +88,14 @@ namespace Gley.NavigationSystem.InputSystem
                 float zoom = zoomAction.ReadValue<float>();
                 if (zoom != 0f)
                 {
-                    target.ZoomBySpeed(zoom, deltaTime);
+                    target.Interactive.ZoomBySpeed(zoom, deltaTime);
                 }
             }
         }
 
         private void HandleConfirmPerformed(InputAction.CallbackContext context)
         {
-            if (target == null)
+            if (target == null || target.Interactive == null)
             {
                 return;
             }
@@ -102,7 +107,7 @@ namespace Gley.NavigationSystem.InputSystem
             }
             else
             {
-                target.ConfirmAtCrosshair();
+                target.Interactive.ConfirmAtCrosshair();
             }
         }
 

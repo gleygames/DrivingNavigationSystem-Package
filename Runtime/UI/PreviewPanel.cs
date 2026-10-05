@@ -1,46 +1,38 @@
 using System.Text;
-using Gley.Common;
-using UnityEngine;
-using UnityEngine.UI;
 
 namespace Gley.NavigationSystem
 {
-    public class PreviewPanel : MonoBehaviour
+    internal class PreviewPanel
     {
         private readonly StringBuilder distanceScratch = new StringBuilder(16);
         private readonly StringBuilder etaScratch = new StringBuilder(16);
+        private readonly PreviewPanelSlots slots;
 
-        [SerializeField] private NavigationManager manager;
-        [SerializeField] private GameObject panelRoot;
-        [SerializeField] private NavigationTextTarget distanceText;
-        [SerializeField] private NavigationTextTarget etaText;
-        [SerializeField] private Button confirmButton;
-        [SerializeField] private Button cancelButton;
         private NavigationManager cachedManager;
 
-        private void OnEnable()
+        internal PreviewPanel(PreviewPanelSlots slots)
         {
-            NavigationManager found = FindManager();
-            if (found != null)
+            this.slots = slots;
+        }
+
+        internal void Enable(NavigationManager manager)
+        {
+            if (manager != null)
             {
-                cachedManager = found;
-                found.PreviewReady += HandlePreviewReady;
-                found.PreviewFailed += HandlePreviewFailed;
-                found.PreviewCanceled += HandlePreviewCanceled;
-                found.NavigationStarted += HandleNavigationStarted;
-            }
-            else
-            {
-                CustomLogger.LogError("PreviewPanel on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
+                cachedManager = manager;
+                manager.PreviewReady += HandlePreviewReady;
+                manager.PreviewFailed += HandlePreviewFailed;
+                manager.PreviewCanceled += HandlePreviewCanceled;
+                manager.NavigationStarted += HandleNavigationStarted;
             }
 
-            if (confirmButton != null)
+            if (slots.ConfirmButton != null)
             {
-                confirmButton.onClick.AddListener(HandleConfirmClicked);
+                slots.ConfirmButton.onClick.AddListener(HandleConfirmClicked);
             }
-            if (cancelButton != null)
+            if (slots.CancelButton != null)
             {
-                cancelButton.onClick.AddListener(HandleCancelClicked);
+                slots.CancelButton.onClick.AddListener(HandleCancelClicked);
             }
 
             if (cachedManager != null)
@@ -53,49 +45,6 @@ namespace Gley.NavigationSystem
             }
         }
 
-        internal void SetManager(NavigationManager value)
-        {
-            manager = value;
-        }
-
-        internal void SetPanelRoot(GameObject value)
-        {
-            panelRoot = value;
-        }
-
-        internal void SetDistanceText(NavigationTextTarget value)
-        {
-            distanceText = value;
-        }
-
-        internal void SetEtaText(NavigationTextTarget value)
-        {
-            etaText = value;
-        }
-
-        internal void SetConfirmButton(Button value)
-        {
-            confirmButton = value;
-        }
-
-        internal void SetCancelButton(Button value)
-        {
-            cancelButton = value;
-        }
-
-        private NavigationManager FindManager()
-        {
-            if (manager != null)
-            {
-                return manager;
-            }
-            if (cachedManager != null)
-            {
-                return cachedManager;
-            }
-            return FindAnyObjectByType<NavigationManager>();
-        }
-
         private void HandlePreviewReady(Route route, MapMarker marker)
         {
             SetVisible(true);
@@ -104,9 +53,9 @@ namespace Gley.NavigationSystem
 
         private void SetVisible(bool visible)
         {
-            if (panelRoot != null)
+            if (slots.PanelRoot != null)
             {
-                panelRoot.SetActive(visible);
+                slots.PanelRoot.SetActive(visible);
             }
         }
 
@@ -117,18 +66,18 @@ namespace Gley.NavigationSystem
                 return;
             }
 
-            if (distanceText != null)
+            if (slots.DistanceText != null)
             {
                 distanceScratch.Length = 0;
                 cachedManager.Formatter.FormatDistance(route.Length, distanceScratch);
-                distanceText.SetText(distanceScratch);
+                slots.DistanceText.SetText(distanceScratch);
             }
 
-            if (etaText != null)
+            if (slots.EtaText != null)
             {
                 etaScratch.Length = 0;
                 cachedManager.Formatter.FormatDuration(route.Eta, etaScratch);
-                etaText.SetText(etaScratch);
+                slots.EtaText.SetText(etaScratch);
             }
         }
 
@@ -163,7 +112,7 @@ namespace Gley.NavigationSystem
             }
         }
 
-        private void OnDisable()
+        internal void Disable()
         {
             if (cachedManager != null)
             {
@@ -174,13 +123,13 @@ namespace Gley.NavigationSystem
                 cachedManager = null;
             }
 
-            if (confirmButton != null)
+            if (slots.ConfirmButton != null)
             {
-                confirmButton.onClick.RemoveListener(HandleConfirmClicked);
+                slots.ConfirmButton.onClick.RemoveListener(HandleConfirmClicked);
             }
-            if (cancelButton != null)
+            if (slots.CancelButton != null)
             {
-                cancelButton.onClick.RemoveListener(HandleCancelClicked);
+                slots.CancelButton.onClick.RemoveListener(HandleCancelClicked);
             }
         }
     }

@@ -1,63 +1,50 @@
-using Gley.Common;
-using UnityEngine;
-using UnityEngine.UI;
-
 namespace Gley.NavigationSystem
 {
-    public class NavigationControls : MonoBehaviour
+    internal class NavigationControls
     {
-        [SerializeField] private NavigationManager manager;
-        [SerializeField] private MapViewInteractive interactive;
-        [SerializeField] private Button stopButton;
-        [SerializeField] private Button centerButton;
-        [SerializeField] private Button closeButton;
+        private readonly NavigationFullMap owner;
+        private readonly MapViewInteractive interactive;
+        private readonly FullMapButtons buttons;
+
         private NavigationManager cachedManager;
         private bool centerVisible;
 
-        private void OnEnable()
+        internal NavigationControls(NavigationFullMap owner, MapViewInteractive interactive, FullMapButtons buttons)
         {
-            if (interactive == null)
+            this.owner = owner;
+            this.interactive = interactive;
+            this.buttons = buttons;
+        }
+
+        internal void Enable(NavigationManager manager)
+        {
+            if (manager != null)
             {
-                interactive = GetComponentInParent<MapViewInteractive>();
+                cachedManager = manager;
+                manager.NavigationStarted += HandleNavigationStarted;
+                manager.Arrived += HandleArrived;
+                manager.NavigationStopped += HandleNavigationStopped;
+                manager.RouteFailed += HandleRouteFailed;
             }
 
-            NavigationManager found = FindManager();
-            if (found != null)
+            if (buttons.StopButton != null)
             {
-                cachedManager = found;
-                found.NavigationStarted += HandleNavigationStarted;
-                found.Arrived += HandleArrived;
-                found.NavigationStopped += HandleNavigationStopped;
-                found.RouteFailed += HandleRouteFailed;
+                buttons.StopButton.onClick.AddListener(HandleStopClicked);
             }
-            else
+            if (buttons.CenterButton != null)
             {
-                CustomLogger.LogError("NavigationControls on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
+                buttons.CenterButton.onClick.AddListener(HandleCenterClicked);
             }
-
-            if (stopButton != null)
+            if (buttons.CloseButton != null)
             {
-                stopButton.onClick.AddListener(HandleStopClicked);
-            }
-            if (centerButton != null)
-            {
-                centerButton.onClick.AddListener(HandleCenterClicked);
-            }
-            if (closeButton != null)
-            {
-                closeButton.onClick.AddListener(HandleCloseClicked);
+                buttons.CloseButton.onClick.AddListener(HandleCloseClicked);
             }
 
             RefreshStopVisible();
             ApplyCenterVisible(ComputeCenterVisible());
         }
 
-        private void LateUpdate()
-        {
-            UpdateNavigationControlsVisuals();
-        }
-
-        public void UpdateNavigationControlsVisuals()
+        internal void UpdateNavigationControlsVisuals()
         {
             bool visible = ComputeCenterVisible();
             if (visible == centerVisible)
@@ -67,44 +54,6 @@ namespace Gley.NavigationSystem
             ApplyCenterVisible(visible);
         }
 
-        internal void SetManager(NavigationManager value)
-        {
-            manager = value;
-        }
-
-        internal void SetInteractive(MapViewInteractive value)
-        {
-            interactive = value;
-        }
-
-        internal void SetStopButton(Button value)
-        {
-            stopButton = value;
-        }
-
-        internal void SetCenterButton(Button value)
-        {
-            centerButton = value;
-        }
-
-        internal void SetCloseButton(Button value)
-        {
-            closeButton = value;
-        }
-
-        private NavigationManager FindManager()
-        {
-            if (manager != null)
-            {
-                return manager;
-            }
-            if (cachedManager != null)
-            {
-                return cachedManager;
-            }
-            return FindAnyObjectByType<NavigationManager>();
-        }
-
         private void HandleNavigationStarted(Route route)
         {
             RefreshStopVisible();
@@ -112,7 +61,7 @@ namespace Gley.NavigationSystem
 
         private void RefreshStopVisible()
         {
-            if (stopButton == null)
+            if (buttons.StopButton == null)
             {
                 return;
             }
@@ -122,7 +71,7 @@ namespace Gley.NavigationSystem
             {
                 visible = cachedManager.HasActiveRoute;
             }
-            stopButton.gameObject.SetActive(visible);
+            buttons.StopButton.gameObject.SetActive(visible);
         }
 
         private void HandleArrived()
@@ -152,9 +101,9 @@ namespace Gley.NavigationSystem
         private void ApplyCenterVisible(bool visible)
         {
             centerVisible = visible;
-            if (centerButton != null)
+            if (buttons.CenterButton != null)
             {
-                centerButton.gameObject.SetActive(visible);
+                buttons.CenterButton.gameObject.SetActive(visible);
             }
         }
 
@@ -176,13 +125,13 @@ namespace Gley.NavigationSystem
 
         private void HandleCloseClicked()
         {
-            if (interactive != null)
+            if (owner != null)
             {
-                interactive.Close();
+                owner.Close();
             }
         }
 
-        private void OnDisable()
+        internal void Disable()
         {
             if (cachedManager != null)
             {
@@ -193,17 +142,17 @@ namespace Gley.NavigationSystem
                 cachedManager = null;
             }
 
-            if (stopButton != null)
+            if (buttons.StopButton != null)
             {
-                stopButton.onClick.RemoveListener(HandleStopClicked);
+                buttons.StopButton.onClick.RemoveListener(HandleStopClicked);
             }
-            if (centerButton != null)
+            if (buttons.CenterButton != null)
             {
-                centerButton.onClick.RemoveListener(HandleCenterClicked);
+                buttons.CenterButton.onClick.RemoveListener(HandleCenterClicked);
             }
-            if (closeButton != null)
+            if (buttons.CloseButton != null)
             {
-                closeButton.onClick.RemoveListener(HandleCloseClicked);
+                buttons.CloseButton.onClick.RemoveListener(HandleCloseClicked);
             }
         }
     }

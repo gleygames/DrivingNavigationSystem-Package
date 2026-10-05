@@ -1,13 +1,10 @@
-using System;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Gley.NavigationSystem
 {
-    [DefaultExecutionOrder(99)]
-    [RequireComponent(typeof(MapView))]
-    public class MapViewInteractive : MonoBehaviour, IMapGestureTarget
+    public class MapViewInteractive : IMapGestureTarget
     {
         private const float GamepadPanSpeedFraction = 0.5f;
         private const float GamepadZoomSpeedPerSecond = 2f;
@@ -15,50 +12,37 @@ namespace Gley.NavigationSystem
         private readonly FullMapMath math = new FullMapMath();
         private readonly CrosshairModeLogic crosshairLogic = new CrosshairModeLogic();
         private readonly ProfilerMarker interactiveMarker = new ProfilerMarker("Gley.Nav.Interactive");
+        private readonly NavigationFullMap owner;
+        private readonly MapView view;
+        private readonly FullMapInteractionSettings settings;
+        private readonly Image crosshairImage;
 
-        private MapView view;
         private NavigationManager manager;
-        [SerializeField] private FullMapZoomOutMode zoomOutMode = FullMapZoomOutMode.Fit;
-        [SerializeField] private CrosshairMode crosshairMode = CrosshairMode.Auto;
-        [SerializeField] private Image crosshairImage;
-        [SerializeField] private float openZoomMeters = 1000f;
-        [SerializeField] private float mouseWheelStep = 1.25f;
-        [SerializeField] private float doubleTapStep = 2f;
-        [SerializeField] private float markerTapRadius = 40f;
-        [SerializeField] private bool confirmStep = true;
         private bool isFollowingCar;
         private bool needsSnap = true;
         private bool crosshairVisible;
 
-        public event Action Opened;
-        public event Action Closed;
-
-        public FullMapZoomOutMode ZoomOutMode { get { return zoomOutMode; } }
-        public CrosshairMode CrosshairMode { get { return crosshairMode; } }
         public float ZoomMeters { get { return view.ZoomMeters; } }
-        public float OpenZoomMeters { get { return openZoomMeters; } }
-        public float MouseWheelStep { get { return mouseWheelStep; } }
-        public float DoubleTapStep { get { return doubleTapStep; } }
-        public float MarkerTapRadius { get { return markerTapRadius; } }
-        public bool ConfirmStep { get { return confirmStep; } }
         public bool IsFollowingCar { get { return isFollowingCar; } }
         public bool IsCrosshairActive { get { return crosshairLogic.IsCrosshairActive; } }
 
-        private void OnEnable()
+        internal MapViewInteractive(NavigationFullMap owner, MapView view, FullMapInteractionSettings settings, Image crosshairImage)
         {
-            view = GetComponent<MapView>();
+            this.owner = owner;
+            this.view = view;
+            this.settings = settings;
+            this.crosshairImage = crosshairImage;
+        }
+
+        internal void Enable()
+        {
             isFollowingCar = true;
             needsSnap = true;
-            crosshairLogic.Mode = crosshairMode;
+            crosshairLogic.Mode = settings.CrosshairMode;
             ApplyCrosshairVisible(crosshairLogic.IsCrosshairActive);
         }
 
-        private void LateUpdate()
-        {
-            UpdateInteractiveMapLogic(Time.unscaledDeltaTime);
-        }
-
-        public void UpdateInteractiveMapLogic(float deltaTime)
+        internal void UpdateInteractiveMapLogic(float deltaTime)
         {
             using (interactiveMarker.Auto())
             {
@@ -70,13 +54,10 @@ namespace Gley.NavigationSystem
 
                 if (needsSnap)
                 {
-                    view.SetZoomMeters(openZoomMeters, ComputeMaxZoomMeters(activeManager));
+                    view.SetZoomMeters(settings.OpenZoomMeters, ComputeMaxZoomMeters(activeManager));
                     ApplyClampedCenter(activeManager.CarMapPosition, activeManager.Frame.Size);
                     needsSnap = false;
-                    if (Opened != null)
-                    {
-                        Opened();
-                    }
+                    owner.NotifyOpened();
                 }
                 else if (isFollowingCar)
                 {
@@ -89,7 +70,7 @@ namespace Gley.NavigationSystem
 
                 view.SetRotation(0f);
 
-                crosshairLogic.Mode = crosshairMode;
+                crosshairLogic.Mode = settings.CrosshairMode;
                 bool crosshairActive = crosshairLogic.IsCrosshairActive;
                 if (crosshairActive != crosshairVisible)
                 {
@@ -154,7 +135,7 @@ namespace Gley.NavigationSystem
             Vector3 worldPoint;
             MarkerLayer markerLayer = view.MarkerLayer;
             Vector3 markerTruePosition;
-            if (markerLayer != null && markerLayer.FindNearestDestinationMarker(screenPoint, markerTapRadius, out marker, out markerTruePosition))
+            if (markerLayer != null && markerLayer.FindNearestDestinationMarker(screenPoint, settings.MarkerTapRadius, out marker, out markerTruePosition))
             {
                 worldPoint = activeManager.Converter.TrueToWorld(markerTruePosition);
             }
@@ -165,7 +146,7 @@ namespace Gley.NavigationSystem
                 worldPoint = activeManager.Converter.TrueToWorld(truePoint);
             }
 
-            if (confirmStep)
+            if (settings.ConfirmStep)
             {
                 activeManager.PreviewDestination(worldPoint, marker);
             }
@@ -190,21 +171,6 @@ namespace Gley.NavigationSystem
         public void CenterOnCar()
         {
             isFollowingCar = true;
-        }
-
-        public void Open()
-        {
-            gameObject.SetActive(true);
-        }
-
-        public void Close()
-        {
-            gameObject.SetActive(false);
-        }
-
-        public void Toggle()
-        {
-            gameObject.SetActive(!gameObject.activeSelf);
         }
 
         public void SetCrosshairMode(bool active)
@@ -236,50 +202,9 @@ namespace Gley.NavigationSystem
             Zoom(factor, Vector2.zero);
         }
 
-        internal void SetZoomOutMode(FullMapZoomOutMode value)
-        {
-            zoomOutMode = value;
-        }
-
-        internal void SetCrosshairMode(CrosshairMode value)
-        {
-            crosshairMode = value;
-            crosshairLogic.Mode = value;
-        }
-
-        internal void SetCrosshairImage(Image value)
-        {
-            crosshairImage = value;
-        }
-
         internal void NotifyPointerInput()
         {
             crosshairLogic.NotifyPointerInput();
-        }
-
-        internal void SetOpenZoomMeters(float value)
-        {
-            openZoomMeters = value;
-        }
-
-        internal void SetMouseWheelStep(float value)
-        {
-            mouseWheelStep = value;
-        }
-
-        internal void SetDoubleTapStep(float value)
-        {
-            doubleTapStep = value;
-        }
-
-        internal void SetMarkerTapRadius(float value)
-        {
-            markerTapRadius = value;
-        }
-
-        internal void SetConfirmStep(bool value)
-        {
-            confirmStep = value;
         }
 
         private void ApplyCrosshairVisible(bool visible)
@@ -310,7 +235,7 @@ namespace Gley.NavigationSystem
 
         private float ComputeMaxZoomMeters(NavigationManager activeManager)
         {
-            bool fit = zoomOutMode == FullMapZoomOutMode.Fit;
+            bool fit = settings.ZoomOutMode == FullMapZoomOutMode.Fit;
             return math.MaxZoomMeters(activeManager.Frame.Size, view.Viewport.rect.size, fit);
         }
 
@@ -321,16 +246,11 @@ namespace Gley.NavigationSystem
             view.SetCenter(clampedCenter);
         }
 
-        private void OnDisable()
+        internal void Disable()
         {
             if (manager != null)
             {
                 manager.CancelPreview();
-            }
-
-            if (Closed != null)
-            {
-                Closed();
             }
         }
     }
