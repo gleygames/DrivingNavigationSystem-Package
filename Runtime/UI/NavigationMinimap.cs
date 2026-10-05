@@ -9,13 +9,16 @@ namespace Gley.NavigationSystem
     [RequireComponent(typeof(RectTransform))]
     public class NavigationMinimap : MonoBehaviour, IPointerClickHandler
     {
+        [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
+        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.MinimapChannelBit, false);
         [SerializeField] private MinimapFollowSettings followSettings = new MinimapFollowSettings();
         [SerializeField] private MinimapShapeSettings shapeSettings = new MinimapShapeSettings();
         [SerializeField] private MinimapTapAction tapAction = MinimapTapAction.OpenFullMap;
         [SerializeField] private NavigationFullMap fullMap;
         [SerializeField] private Button compassButton;
         [SerializeField] private RectTransform compassIcon;
+        private NavigationManager cachedManager;
         private MapView view;
         private MapViewFollowCar followCar;
         private MinimapShape shape;
@@ -23,6 +26,7 @@ namespace Gley.NavigationSystem
         private bool partsEnabled;
 
         public MapView View { get { return view; } }
+        public MapViewSettings ViewSettings { get { return viewSettings; } }
         public MinimapFollowSettings FollowSettings { get { return followSettings; } }
         public MinimapShapeSettings ShapeSettings { get { return shapeSettings; } }
         public MinimapRotationMode RotationMode { get { return followSettings.RotationMode; } }
@@ -37,6 +41,13 @@ namespace Gley.NavigationSystem
                 return;
             }
 
+            cachedManager = FindManager();
+            if (cachedManager == null)
+            {
+                CustomLogger.LogError("NavigationMinimap on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
+            }
+
+            view.Enable(cachedManager);
             ApplyShape();
             view.SetEdgeShape(shapeSettings.Outline);
             followCar.Enable();
@@ -58,6 +69,7 @@ namespace Gley.NavigationSystem
 
             view.SetEdgeShape(shapeSettings.Outline);
             followCar.UpdateFollowCarVisuals(deltaTime);
+            view.UpdateMapViewVisuals(deltaTime);
             compass.UpdateCompassVisuals();
         }
 
@@ -102,6 +114,11 @@ namespace Gley.NavigationSystem
             fullMap.Open();
         }
 
+        internal void SetManager(NavigationManager value)
+        {
+            manager = value;
+        }
+
         internal void SetViewport(RectTransform value)
         {
             viewport = value;
@@ -140,13 +157,7 @@ namespace Gley.NavigationSystem
                 return false;
             }
 
-            view = viewport.GetComponent<MapView>();
-            if (view == null)
-            {
-                CustomLogger.LogError("NavigationMinimap on '" + name + "': no MapView on the Viewport.", this);
-                return false;
-            }
-
+            view = new MapView(this, viewport, viewSettings);
             followCar = new MapViewFollowCar(view, followSettings, shapeSettings);
             if (shape == null)
             {
@@ -154,6 +165,19 @@ namespace Gley.NavigationSystem
             }
             compass = new MinimapCompass(compassButton, compassIcon, view, followSettings);
             return true;
+        }
+
+        private NavigationManager FindManager()
+        {
+            if (manager != null)
+            {
+                return manager;
+            }
+            if (cachedManager != null)
+            {
+                return cachedManager;
+            }
+            return FindAnyObjectByType<NavigationManager>();
         }
 
         private void OnValidate()
@@ -187,7 +211,9 @@ namespace Gley.NavigationSystem
 
             compass.Disable();
             followCar.Disable();
+            view.Disable();
             partsEnabled = false;
+            cachedManager = null;
         }
     }
 }

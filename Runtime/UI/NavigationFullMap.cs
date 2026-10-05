@@ -12,6 +12,7 @@ namespace Gley.NavigationSystem
     {
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
+        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.FullMapChannelBit, true);
         [SerializeField] private FullMapInteractionSettings interactionSettings = new FullMapInteractionSettings();
         [SerializeField] private Image crosshairImage;
         [SerializeField] private PreviewPanelSlots previewPanel = new PreviewPanelSlots();
@@ -29,6 +30,7 @@ namespace Gley.NavigationSystem
 
         public MapView View { get { return view; } }
         public MapViewInteractive Interactive { get { return interactive; } }
+        public MapViewSettings ViewSettings { get { return viewSettings; } }
         public FullMapInteractionSettings InteractionSettings { get { return interactionSettings; } }
         public PreviewPanelSlots PreviewPanelSlots { get { return previewPanel; } }
         public FullMapButtons Buttons { get { return buttons; } }
@@ -47,6 +49,7 @@ namespace Gley.NavigationSystem
                 CustomLogger.LogError("NavigationFullMap on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
             }
 
+            view.Enable(cachedManager);
             interactive.Enable();
             panel.Enable(cachedManager);
             controls.Enable(cachedManager);
@@ -81,6 +84,7 @@ namespace Gley.NavigationSystem
             }
 
             interactive.UpdateInteractiveMapLogic(deltaTime);
+            view.UpdateMapViewVisuals(deltaTime);
             controls.UpdateNavigationControlsVisuals();
         }
 
@@ -192,13 +196,7 @@ namespace Gley.NavigationSystem
                 return false;
             }
 
-            view = viewport.GetComponent<MapView>();
-            if (view == null)
-            {
-                CustomLogger.LogError("NavigationFullMap on '" + name + "': no MapView on the Viewport.", this);
-                return false;
-            }
-
+            view = new MapView(this, viewport, viewSettings);
             interactive = new MapViewInteractive(this, view, interactionSettings, crosshairImage);
             pointerInput = new PointerInputAdapter(interactive, viewport, interactionSettings);
             panel = new PreviewPanel(previewPanel);
@@ -234,6 +232,7 @@ namespace Gley.NavigationSystem
             controls.Disable();
             panel.Disable();
             interactive.Disable();
+            view.Disable();
             partsEnabled = false;
             cachedManager = null;
             if (Closed != null)

@@ -432,32 +432,36 @@ namespace Gley.NavigationSystem.Editor
 
             float metersPerPixel = data.RectangleSize.x / data.Image.width;
 
-            MapView[] views = FindObjectsByType<MapView>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            if (views.Length == 0)
+            NavigationMinimap[] minimaps = FindObjectsByType<NavigationMinimap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            NavigationFullMap[] fullMaps = FindObjectsByType<NavigationFullMap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            if (minimaps.Length == 0 && fullMaps.Length == 0)
             {
                 DrawBlurLine("Minimap (default)", DefaultMinimapWidthCanvas, DefaultMinZoomMeters, metersPerPixel);
                 DrawBlurLine("Full map (default)", DefaultFullMapWidthCanvas, DefaultMinZoomMeters, metersPerPixel);
                 return;
             }
 
-            for (int i = 0; i < views.Length; i++)
+            for (int i = 0; i < minimaps.Length; i++)
             {
-                MapView view = views[i];
-                if (view.Viewport == null)
+                NavigationMinimap minimap = minimaps[i];
+                if (minimap.Viewport == null)
                 {
                     continue;
                 }
 
-                float viewportWidth = view.Viewport.rect.width;
-                float minZoomMeters = ReadMinZoomMeters(view);
-                DrawBlurLine(view.name, viewportWidth, minZoomMeters, metersPerPixel);
+                DrawBlurLine(minimap.name, minimap.Viewport.rect.width, minimap.ViewSettings.MinZoomMeters, metersPerPixel);
             }
-        }
 
-        private float ReadMinZoomMeters(MapView view)
-        {
-            SerializedObject serializedView = new SerializedObject(view);
-            return serializedView.FindProperty("minZoomMeters").floatValue;
+            for (int i = 0; i < fullMaps.Length; i++)
+            {
+                NavigationFullMap fullMap = fullMaps[i];
+                if (fullMap.Viewport == null)
+                {
+                    continue;
+                }
+
+                DrawBlurLine(fullMap.name, fullMap.Viewport.rect.width, fullMap.ViewSettings.MinZoomMeters, metersPerPixel);
+            }
         }
 
         private void DrawBlurLine(string label, float viewportWidthCanvas, float minZoomMeters, float metersPerPixel)

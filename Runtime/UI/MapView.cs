@@ -6,12 +6,8 @@ using UnityEngine.UI;
 
 namespace Gley.NavigationSystem
 {
-    [DefaultExecutionOrder(100)]
-    [RequireComponent(typeof(RectTransform))]
-    public class MapView : MonoBehaviour
+    public class MapView
     {
-        private const int MinimapChannelBit = 1 << 0;
-        private const int FullMapChannelBit = 1 << 1;
         private const int TrimModeRemove = 0;
         private const int TrimModeFade = 1;
 
@@ -25,12 +21,11 @@ namespace Gley.NavigationSystem
         private readonly RouteLineData routeLineData = new RouteLineData();
         private readonly ProfilerMarker viewMarker = new ProfilerMarker("Gley.Nav.MapView");
         private readonly ProfilerMarker routeLineUpdateMarker = new ProfilerMarker("Gley.Nav.RouteLine.Update");
+        private readonly MonoBehaviour host;
+        private readonly MapViewSettings settings;
 
-        [SerializeField] private NavigationManager manager;
-        [SerializeField] private RectTransform viewport;
-        [SerializeField] private RouteStyle routeStyle;
-        [SerializeField] private EdgeShape edgeShape = EdgeShape.Rectangle;
-        [SerializeField] private GameObject arrowPrefab;
+        private RectTransform viewport;
+        private EdgeShape edgeShape = EdgeShape.Rectangle;
         private NavigationManager cachedManager;
         private RectTransform content;
         private Image backgroundImage;
@@ -41,14 +36,8 @@ namespace Gley.NavigationSystem
         private MapViewFollowCar followCar;
         private MapFrame currentFrame;
         private Vector2 centerMap;
-        [SerializeField] private float zoomMeters = 300f;
-        [SerializeField] private float minZoomMeters = 50f;
-        [SerializeField] private float edgeInset = 8f;
+        private float zoomMeters = 300f;
         private float rotationDegrees;
-        [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
-        [SerializeField] private bool showPreview = true;
-        [SerializeField] private bool showOffScreenArrows = true;
-        [SerializeField] private bool showArrowDistance = true;
         private bool hierarchyBuilt;
         private bool hasManager;
 
@@ -63,44 +52,45 @@ namespace Gley.NavigationSystem
         internal RectTransform Viewport { get { return viewport; } }
         internal MapFrame Frame { get { return currentFrame; } }
         public EdgeShape EdgeShape { get { return edgeShape; } }
-        internal GameObject ArrowPrefab { get { return arrowPrefab; } }
+        internal GameObject ArrowPrefab { get { return settings.ArrowPrefab; } }
+        internal MapViewSettings Settings { get { return settings; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }
-        public float EdgeInset { get { return edgeInset; } }
+        public float EdgeInset { get { return settings.EdgeInset; } }
         public float CanvasUnitsPerMeter { get { return math.ComputeScale(viewport.rect.width, zoomMeters); } }
-        public int ChannelMask { get { return channelMask; } }
-        public bool ShowOffScreenArrows { get { return showOffScreenArrows; } }
-        public bool ShowArrowDistance { get { return showArrowDistance; } }
+        public int ChannelMask { get { return settings.ChannelMask; } }
+        public bool ShowOffScreenArrows { get { return settings.ShowOffScreenArrows; } }
+        public bool ShowArrowDistance { get { return settings.ShowArrowDistance; } }
 
-        private void OnEnable()
+        internal MapView(MonoBehaviour host, RectTransform viewport, MapViewSettings settings)
+        {
+            this.host = host;
+            this.viewport = viewport;
+            this.settings = settings;
+        }
+
+        internal void Enable(NavigationManager manager)
         {
             BuildHierarchyIfNeeded();
 
-            NavigationManager found = FindManager();
-            if (found == null)
+            if (manager == null)
             {
-                CustomLogger.LogError("MapView on '" + name + "': no NavigationManager found. Load the UI after the Navigation Manager.", this);
                 return;
             }
 
-            cachedManager = found;
+            cachedManager = manager;
             hasManager = true;
-            found.MapChanged += HandleMapChanged;
-            found.NavigationStarted += HandleNavigationStarted;
-            found.Rerouted += HandleRerouted;
-            found.Arrived += HandleArrived;
-            found.NavigationStopped += HandleNavigationStopped;
-            found.RouteFailed += HandleRouteFailed;
-            found.PreviewReady += HandlePreviewReady;
-            found.PreviewFailed += HandlePreviewFailed;
-            found.PreviewCanceled += HandlePreviewCanceled;
-            HandleMapChanged(found.ActiveMap);
-            ShowCurrentRoutes(found);
-        }
-
-        private void LateUpdate()
-        {
-            UpdateMapViewVisuals(Time.unscaledDeltaTime);
+            manager.MapChanged += HandleMapChanged;
+            manager.NavigationStarted += HandleNavigationStarted;
+            manager.Rerouted += HandleRerouted;
+            manager.Arrived += HandleArrived;
+            manager.NavigationStopped += HandleNavigationStopped;
+            manager.RouteFailed += HandleRouteFailed;
+            manager.PreviewReady += HandlePreviewReady;
+            manager.PreviewFailed += HandlePreviewFailed;
+            manager.PreviewCanceled += HandlePreviewCanceled;
+            HandleMapChanged(manager.ActiveMap);
+            ShowCurrentRoutes(manager);
         }
 
         public void UpdateMapViewVisuals(float deltaTime)
@@ -138,7 +128,7 @@ namespace Gley.NavigationSystem
 
         public void SetZoomMeters(float meters, float maxZoomMeters)
         {
-            zoomMeters = Mathf.Clamp(meters, minZoomMeters, maxZoomMeters);
+            zoomMeters = Mathf.Clamp(meters, settings.MinZoomMeters, maxZoomMeters);
         }
 
         internal void SetFollowCar(MapViewFollowCar value)
@@ -146,39 +136,9 @@ namespace Gley.NavigationSystem
             followCar = value;
         }
 
-        internal void SetShowPreview(bool value)
-        {
-            showPreview = value;
-        }
-
-        internal void SetChannelMask(int value)
-        {
-            channelMask = value;
-        }
-
         internal void SetEdgeShape(EdgeShape value)
         {
             edgeShape = value;
-        }
-
-        internal void SetEdgeInset(float value)
-        {
-            edgeInset = value;
-        }
-
-        internal void SetArrowPrefab(GameObject value)
-        {
-            arrowPrefab = value;
-        }
-
-        internal void SetShowOffScreenArrows(bool value)
-        {
-            showOffScreenArrows = value;
-        }
-
-        internal void SetShowArrowDistance(bool value)
-        {
-            showArrowDistance = value;
         }
 
         public Vector3 ScreenToWorld(Vector2 screenPoint)
@@ -228,7 +188,7 @@ namespace Gley.NavigationSystem
 
             if (viewport == null)
             {
-                viewport = GetComponent<RectTransform>();
+                viewport = host.GetComponent<RectTransform>();
             }
 
             CreateBackground();
@@ -308,6 +268,7 @@ namespace Gley.NavigationSystem
 
         private void ApplyRouteStyle()
         {
+            RouteStyle routeStyle = settings.RouteStyle;
             if (routeStyle == null)
             {
                 return;
@@ -348,19 +309,6 @@ namespace Gley.NavigationSystem
             markerLayer.transform.SetSiblingIndex(2);
         }
 
-        private NavigationManager FindManager()
-        {
-            if (manager != null)
-            {
-                return manager;
-            }
-            if (cachedManager != null)
-            {
-                return cachedManager;
-            }
-            return FindAnyObjectByType<NavigationManager>();
-        }
-
         private void HandleMapChanged(NavigationMap map)
         {
             if (map == null || map.MapData == null)
@@ -386,7 +334,7 @@ namespace Gley.NavigationSystem
             {
                 RebuildActiveLine(found.ActiveRoute);
             }
-            if (showPreview && found.PreviewRoute != null)
+            if (settings.ShowPreview && found.PreviewRoute != null)
             {
                 RebuildPreviewLine(found.PreviewRoute);
             }
@@ -424,7 +372,7 @@ namespace Gley.NavigationSystem
 
         private void HandlePreviewReady(Route route, MapMarker marker)
         {
-            if (!showPreview)
+            if (!settings.ShowPreview)
             {
                 return;
             }
@@ -476,7 +424,7 @@ namespace Gley.NavigationSystem
 
         private void HandleManagerLost()
         {
-            CustomLogger.LogError("MapView on '" + name + "': the NavigationManager was destroyed. The UI must not outlive the Manager.", this);
+            CustomLogger.LogError("MapView on '" + host.name + "': the NavigationManager was destroyed. The UI must not outlive the Manager.", host);
             UnsubscribeFromManager(cachedManager);
             ClearActiveLine();
             ClearPreviewLine();
@@ -543,7 +491,7 @@ namespace Gley.NavigationSystem
             return root.worldCamera;
         }
 
-        private void OnDisable()
+        internal void Disable()
         {
             hasManager = false;
             if (cachedManager == null)

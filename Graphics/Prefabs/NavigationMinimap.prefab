@@ -300,7 +300,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7939551331710557274}
-  - component: {fileID: 5344068837277514217}
   - component: {fileID: 424528298324380062}
   - component: {fileID: 8103209455550120889}
   - component: {fileID: 1600794422155342954}
@@ -330,31 +329,6 @@ RectTransform:
   m_AnchoredPosition: {x: 20, y: 20}
   m_SizeDelta: {x: 300, y: 300}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &5344068837277514217
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5205058797558044130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7337058962949224cbf503f69cc0e6f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  manager: {fileID: 0}
-  viewport: {fileID: 0}
-  routeStyle: {fileID: 11400000, guid: 06ce8c8e908868e4abdcc137065e6620, type: 2}
-  edgeShape: 0
-  arrowPrefab: {fileID: 8660815935308353156, guid: 5b45636002aea3f4db826efa3159cf25,
-    type: 3}
-  zoomMeters: 300
-  minZoomMeters: 50
-  edgeInset: 8
-  channelMask: 1
-  showPreview: 0
-  showOffScreenArrows: 1
-  showArrowDistance: 1
 --- !u!222 &424528298324380062
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -532,7 +506,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01c04eb20eecb9145ab38dd30029b363, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  manager: {fileID: 0}
   viewport: {fileID: 7939551331710557274}
+  viewSettings:
+    routeStyle: {fileID: 11400000, guid: 06ce8c8e908868e4abdcc137065e6620, type: 2}
+    arrowPrefab: {fileID: 8660815935308353156, guid: 5b45636002aea3f4db826efa3159cf25,
+      type: 3}
+    minZoomMeters: 50
+    edgeInset: 8
+    channelMask: 1
+    showPreview: 0
+    showOffScreenArrows: 1
+    showArrowDistance: 1
   followSettings:
     rotationMode: 0
     carOffsetFromBottom: 0.3
