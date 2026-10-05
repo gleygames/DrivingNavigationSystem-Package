@@ -3,51 +3,25 @@ using UnityEngine.UI;
 
 namespace Gley.NavigationSystem
 {
-    [RequireComponent(typeof(RectTransform))]
-    public class MinimapShape : MonoBehaviour
+    internal class MinimapShape
     {
-        [SerializeField] private MinimapShapeKind shapeKind = MinimapShapeKind.Sprite;
-        [SerializeField] private Sprite sprite;
-        [SerializeField] [HideInInspector] private bool ownsImageComponent;
+        private readonly RectTransform viewport;
+        private readonly MinimapShapeSettings settings;
 
-        public MinimapShapeKind ShapeKind { get { return shapeKind; } }
-
-        private void OnEnable()
+        internal MinimapShape(RectTransform viewport, MinimapShapeSettings settings)
         {
-            ApplyShape();
+            this.viewport = viewport;
+            this.settings = settings;
         }
 
-        private void OnValidate()
+        internal void Apply()
         {
-#if UNITY_EDITOR
-            if (Application.isPlaying)
-            {
-                return;
-            }
-            UnityEditor.EditorApplication.delayCall += DelayedApplyShape;
-#endif
-        }
-
-        public void SetShapeKind(MinimapShapeKind value)
-        {
-            shapeKind = value;
-            ApplyShape();
-        }
-
-        public void SetSprite(Sprite value)
-        {
-            sprite = value;
-            ApplyShape();
-        }
-
-        private void ApplyShape()
-        {
-            if (this == null)
+            if (viewport == null)
             {
                 return;
             }
 
-            if (shapeKind == MinimapShapeKind.Rectangle)
+            if (settings.ShapeKind == MinimapShapeKind.Rectangle)
             {
                 ApplyRectangle();
             }
@@ -59,35 +33,31 @@ namespace Gley.NavigationSystem
 
         private void ApplyRectangle()
         {
-            RemoveComponent(GetComponent<Mask>());
-            if (ownsImageComponent)
-            {
-                RemoveComponent(GetComponent<Image>());
-                ownsImageComponent = false;
-            }
+            RemoveComponent(viewport.GetComponent<Mask>());
+            RemoveComponent(viewport.GetComponent<Image>());
 
-            if (GetComponent<RectMask2D>() == null)
+            if (viewport.GetComponent<RectMask2D>() == null)
             {
-                gameObject.AddComponent<RectMask2D>();
+                viewport.gameObject.AddComponent<RectMask2D>();
             }
         }
 
         private void ApplySprite()
         {
-            RemoveComponent(GetComponent<RectMask2D>());
+            RemoveComponent(viewport.GetComponent<RectMask2D>());
 
-            Image image = GetComponent<Image>();
+            Image image = viewport.GetComponent<Image>();
             if (image == null)
             {
-                image = gameObject.AddComponent<Image>();
-                ownsImageComponent = true;
+                image = viewport.gameObject.AddComponent<Image>();
             }
-            image.sprite = sprite;
+            image.sprite = settings.Sprite;
+            image.raycastTarget = true;
 
-            Mask mask = GetComponent<Mask>();
+            Mask mask = viewport.GetComponent<Mask>();
             if (mask == null)
             {
-                mask = gameObject.AddComponent<Mask>();
+                mask = viewport.gameObject.AddComponent<Mask>();
             }
             mask.showMaskGraphic = false;
         }
@@ -101,23 +71,12 @@ namespace Gley.NavigationSystem
 
             if (Application.isPlaying)
             {
-                Destroy(component);
+                Object.Destroy(component);
             }
             else
             {
-                DestroyImmediate(component);
+                Object.DestroyImmediate(component);
             }
         }
-
-#if UNITY_EDITOR
-        private void DelayedApplyShape()
-        {
-            if (this == null)
-            {
-                return;
-            }
-            ApplyShape();
-        }
-#endif
     }
 }

@@ -524,7 +524,7 @@ namespace Gley.NavigationSystem.Editor
 
         private void DrawStep4Ui()
         {
-            bool minimapPresent = FindAnyObjectByType<MapViewFollowCar>(FindObjectsInactive.Include) != null;
+            bool minimapPresent = FindAnyObjectByType<NavigationMinimap>(FindObjectsInactive.Include) != null;
             bool fullMapPresent = FindAnyObjectByType<MapViewInteractive>(FindObjectsInactive.Include) != null;
             InputModuleChoice desiredModule = ComputeDesiredInputModule();
             EventSystem existingEventSystem = FindAnyObjectByType<EventSystem>();
@@ -650,11 +650,11 @@ namespace Gley.NavigationSystem.Editor
             GameObject fullMapInstance = (GameObject)PrefabUtility.InstantiatePrefab(fullMapPrefab, targetCanvas.transform);
             Undo.RegisterCreatedObjectUndo(fullMapInstance, "Add Full Map");
 
-            MinimapTapToOpen tapToOpen = minimapInstance.GetComponentInChildren<MinimapTapToOpen>(true);
+            NavigationMinimap minimap = minimapInstance.GetComponent<NavigationMinimap>();
             MapViewInteractive interactive = fullMapInstance.GetComponentInChildren<MapViewInteractive>(true);
-            if (tapToOpen != null && interactive != null)
+            if (minimap != null && interactive != null)
             {
-                tapToOpen.SetFullMap(interactive);
+                minimap.SetFullMap(interactive);
             }
 
             if (interactive != null && IsAssemblyPresent(InputSystemAssemblyName))

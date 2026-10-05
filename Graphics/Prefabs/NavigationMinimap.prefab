@@ -220,7 +220,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2569581367326540040}
   - component: {fileID: 2712936044518492277}
-  - component: {fileID: 813300842280764142}
   m_Layer: 0
   m_Name: CompassButton
   m_TagString: Untagged
@@ -292,21 +291,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &813300842280764142
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1797557916183394348}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f34933f65a3babe458e04b9debadc632, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mapView: {fileID: 5344068837277514217}
-  followCar: {fileID: 324410430454002135}
-  icon: {fileID: 3024216560702928787}
 --- !u!1 &5205058797558044130
 GameObject:
   m_ObjectHideFlags: 0
@@ -317,12 +301,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7939551331710557274}
   - component: {fileID: 5344068837277514217}
-  - component: {fileID: 324410430454002135}
-  - component: {fileID: 5880129509736900361}
   - component: {fileID: 424528298324380062}
   - component: {fileID: 8103209455550120889}
   - component: {fileID: 1600794422155342954}
-  - component: {fileID: 8775668283714486341}
   m_Layer: 0
   m_Name: Viewport
   m_TagString: Untagged
@@ -364,7 +345,7 @@ MonoBehaviour:
   manager: {fileID: 0}
   viewport: {fileID: 0}
   routeStyle: {fileID: 11400000, guid: 06ce8c8e908868e4abdcc137065e6620, type: 2}
-  edgeShape: 1
+  edgeShape: 0
   arrowPrefab: {fileID: 8660815935308353156, guid: 5b45636002aea3f4db826efa3159cf25,
     type: 3}
   zoomMeters: 300
@@ -374,47 +355,6 @@ MonoBehaviour:
   showPreview: 0
   showOffScreenArrows: 1
   showArrowDistance: 1
---- !u!114 &324410430454002135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5205058797558044130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bf069ed59279704d94cffe7372a215e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rotationMode: 0
-  carOffsetFromBottom: 0.3
-  rotationSmoothing: 0.25
-  turnSmoothing: 0.8
-  turnAngleThreshold: 20
-  noseDeadZoneDegrees: 3
-  speedZoomMinMeters: 150
-  speedZoomMaxMeters: 500
-  speedZoomSlowSpeed: 5.5556
-  speedZoomFastSpeed: 27.7778
-  zoomSmoothing: 0.5
-  fixedZoomMeters: 300
-  speedZoom: 1
-  round: 1
---- !u!114 &5880129509736900361
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5205058797558044130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e44a3185c9a57941a8359a19bc0e0b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shapeKind: 1
-  sprite: {fileID: 21300000, guid: 2c751ae5784772a4781265fde9185b61, type: 3}
-  ownsImageComponent: 1
 --- !u!222 &424528298324380062
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -466,20 +406,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ShowMaskGraphic: 0
---- !u!114 &8775668283714486341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5205058797558044130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ffb63378faab4a41a56a541e39c72b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tapAction: 0
-  fullMap: {fileID: 0}
 --- !u!1 &5926396890483403035
 GameObject:
   m_ObjectHideFlags: 0
@@ -564,6 +490,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5454935684509567489}
+  - component: {fileID: 8408061960996677699}
   m_Layer: 0
   m_Name: NavigationMinimap
   m_TagString: Untagged
@@ -593,3 +520,38 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &8408061960996677699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8234294322884574389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01c04eb20eecb9145ab38dd30029b363, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  viewport: {fileID: 7939551331710557274}
+  followSettings:
+    rotationMode: 0
+    carOffsetFromBottom: 0.3
+    rotationSmoothing: 0.25
+    turnSmoothing: 0.8
+    turnAngleThreshold: 20
+    noseDeadZoneDegrees: 3
+    speedZoom: 1
+    speedZoomMinMeters: 150
+    speedZoomMaxMeters: 500
+    speedZoomSlowSpeed: 5.5556
+    speedZoomFastSpeed: 27.7778
+    zoomSmoothing: 0.5
+    fixedZoomMeters: 300
+  shapeSettings:
+    shapeKind: 1
+    sprite: {fileID: 21300000, guid: 2c751ae5784772a4781265fde9185b61, type: 3}
+    spriteOutline: 1
+  tapAction: 0
+  fullMap: {fileID: 0}
+  compassButton: {fileID: 2712936044518492277}
+  compassIcon: {fileID: 3024216560702928787}
