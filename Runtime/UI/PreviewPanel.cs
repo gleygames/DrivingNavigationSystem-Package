@@ -6,13 +6,16 @@ namespace Gley.NavigationSystem
     {
         private readonly StringBuilder distanceScratch = new StringBuilder(16);
         private readonly StringBuilder etaScratch = new StringBuilder(16);
+        private readonly NavigationTextOutput textOutput = new NavigationTextOutput();
         private readonly PreviewPanelSlots slots;
+        private readonly MapViewSettings viewSettings;
 
         private NavigationManager cachedManager;
 
-        internal PreviewPanel(PreviewPanelSlots slots)
+        internal PreviewPanel(PreviewPanelSlots slots, MapViewSettings viewSettings)
         {
             this.slots = slots;
+            this.viewSettings = viewSettings;
         }
 
         internal void Enable(NavigationManager manager)
@@ -70,14 +73,14 @@ namespace Gley.NavigationSystem
             {
                 distanceScratch.Length = 0;
                 cachedManager.Formatter.FormatDistance(route.Length, distanceScratch);
-                slots.DistanceText.SetText(distanceScratch);
+                textOutput.Write(slots.DistanceText, viewSettings.TextWriter, distanceScratch);
             }
 
             if (slots.EtaText != null)
             {
                 etaScratch.Length = 0;
                 cachedManager.Formatter.FormatDuration(route.Eta, etaScratch);
-                slots.EtaText.SetText(etaScratch);
+                textOutput.Write(slots.EtaText, viewSettings.TextWriter, etaScratch);
             }
         }
 

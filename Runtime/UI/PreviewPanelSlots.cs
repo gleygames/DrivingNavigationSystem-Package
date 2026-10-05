@@ -7,14 +7,14 @@ namespace Gley.NavigationSystem
     public class PreviewPanelSlots
     {
         [SerializeField] private GameObject panelRoot;
-        [SerializeField] private NavigationTextTarget distanceText;
-        [SerializeField] private NavigationTextTarget etaText;
+        [SerializeField] private Component distanceText;
+        [SerializeField] private Component etaText;
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
 
         public GameObject PanelRoot { get { return panelRoot; } }
-        public NavigationTextTarget DistanceText { get { return distanceText; } }
-        public NavigationTextTarget EtaText { get { return etaText; } }
+        public Component DistanceText { get { return distanceText; } }
+        public Component EtaText { get { return etaText; } }
         public Button ConfirmButton { get { return confirmButton; } }
         public Button CancelButton { get { return cancelButton; } }
 
@@ -23,12 +23,12 @@ namespace Gley.NavigationSystem
             panelRoot = value;
         }
 
-        internal void SetDistanceText(NavigationTextTarget value)
+        internal void SetDistanceText(Component value)
         {
             distanceText = value;
         }
 
-        internal void SetEtaText(NavigationTextTarget value)
+        internal void SetEtaText(Component value)
         {
             etaText = value;
         }

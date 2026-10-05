@@ -10,6 +10,7 @@ namespace Gley.NavigationSystem
 
         [SerializeField] private RouteStyle routeStyle;
         [SerializeField] private GameObject arrowPrefab;
+        [SerializeField] private NavigationTextWriter textWriter;
         [SerializeField] private float minZoomMeters = 50f;
         [SerializeField] private float edgeInset = 8f;
         [SerializeField] private int channelMask;
@@ -19,6 +20,7 @@ namespace Gley.NavigationSystem
 
         public RouteStyle RouteStyle { get { return routeStyle; } }
         public GameObject ArrowPrefab { get { return arrowPrefab; } }
+        public NavigationTextWriter TextWriter { get { return textWriter; } }
         public float MinZoomMeters { get { return minZoomMeters; } }
         public float EdgeInset { get { return edgeInset; } }
         public int ChannelMask { get { return channelMask; } }
@@ -46,6 +48,11 @@ namespace Gley.NavigationSystem
         internal void SetArrowPrefab(GameObject value)
         {
             arrowPrefab = value;
+        }
+
+        internal void SetTextWriter(NavigationTextWriter value)
+        {
+            textWriter = value;
         }
 
         internal void SetMinZoomMeters(float value)

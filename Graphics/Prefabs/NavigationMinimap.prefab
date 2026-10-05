@@ -512,6 +512,7 @@ MonoBehaviour:
     routeStyle: {fileID: 11400000, guid: 06ce8c8e908868e4abdcc137065e6620, type: 2}
     arrowPrefab: {fileID: 8660815935308353156, guid: 5b45636002aea3f4db826efa3159cf25,
       type: 3}
+    textWriter: {fileID: 11400000, guid: 163cd35af9867b7408ef67a3e4b525b8, type: 2}
     minZoomMeters: 50
     edgeInset: 8
     channelMask: 1

@@ -11,7 +11,8 @@ namespace Gley.NavigationSystem
 
         private readonly Dictionary<GameObject, List<GameObject>> pool = new Dictionary<GameObject, List<GameObject>>();
         private readonly Dictionary<GameObject, GameObject> prefabOf = new Dictionary<GameObject, GameObject>();
-        private readonly Dictionary<GameObject, NavigationTextTarget> arrowTextTargets = new Dictionary<GameObject, NavigationTextTarget>();
+        private readonly Dictionary<GameObject, Component> arrowTextTargets = new Dictionary<GameObject, Component>();
+        private readonly NavigationTextOutput textOutput = new NavigationTextOutput();
         private readonly Dictionary<GameObject, RectTransform> arrowLabels = new Dictionary<GameObject, RectTransform>();
         private readonly Dictionary<GameObject, Vector2> arrowLabelOffsets = new Dictionary<GameObject, Vector2>();
         private readonly Dictionary<int, GameObject> activeInstances = new Dictionary<int, GameObject>();
@@ -346,7 +347,7 @@ namespace Gley.NavigationSystem
                 return;
             }
 
-            NavigationTextTarget textTarget = arrow.GetComponentInChildren<NavigationTextTarget>(true);
+            Component textTarget = textOutput.FindText(arrow, view.TextWriter);
             arrowTextTargets.Add(arrow, textTarget);
             if (textTarget == null || textTarget.gameObject == arrow)
             {
@@ -436,10 +437,10 @@ namespace Gley.NavigationSystem
                 return;
             }
 
-            NavigationTextTarget textTarget;
+            Component textTarget;
             if (!arrowTextTargets.TryGetValue(arrow, out textTarget))
             {
-                textTarget = arrow.GetComponentInChildren<NavigationTextTarget>();
+                textTarget = textOutput.FindText(arrow, view.TextWriter);
                 arrowTextTargets.Add(arrow, textTarget);
             }
             if (textTarget == null)
@@ -469,7 +470,7 @@ namespace Gley.NavigationSystem
 
             distanceScratch.Length = 0;
             manager.Formatter.FormatDistance(distance, distanceScratch);
-            textTarget.SetText(distanceScratch);
+            textOutput.Write(textTarget, view.TextWriter, distanceScratch);
         }
 
         private void ReleaseArrowInstance(int index)

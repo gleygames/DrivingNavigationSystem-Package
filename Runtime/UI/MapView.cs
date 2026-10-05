@@ -53,6 +53,7 @@ namespace Gley.NavigationSystem
         internal MapFrame Frame { get { return currentFrame; } }
         public EdgeShape EdgeShape { get { return edgeShape; } }
         internal GameObject ArrowPrefab { get { return settings.ArrowPrefab; } }
+        internal NavigationTextWriter TextWriter { get { return settings.TextWriter; } }
         internal MapViewSettings Settings { get { return settings; } }
         public float RotationDegrees { get { return rotationDegrees; } }
         public float ZoomMeters { get { return zoomMeters; } }

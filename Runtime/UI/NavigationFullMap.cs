@@ -199,7 +199,7 @@ namespace Gley.NavigationSystem
             view = new MapView(this, viewport, viewSettings);
             interactive = new MapViewInteractive(this, view, interactionSettings, crosshairImage);
             pointerInput = new PointerInputAdapter(interactive, viewport, interactionSettings);
-            panel = new PreviewPanel(previewPanel);
+            panel = new PreviewPanel(previewPanel, viewSettings);
             controls = new NavigationControls(this, interactive, buttons);
             return true;
         }
