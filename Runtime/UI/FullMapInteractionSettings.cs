@@ -12,6 +12,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private float doubleTapStep = 2f;
         [SerializeField] private float markerTapRadius = 40f;
         [SerializeField] private bool confirmStep = true;
+        [SerializeField] private FullMapTapTarget tapTarget = FullMapTapTarget.MapAndMarkers;
         [SerializeField] private bool builtInPointerInput = true;
         [SerializeField] private bool fling = true;
         [SerializeField] private bool doubleTapZoom = true;
@@ -23,6 +24,7 @@ namespace Gley.NavigationSystem
         public float DoubleTapStep { get { return doubleTapStep; } }
         public float MarkerTapRadius { get { return markerTapRadius; } }
         public bool ConfirmStep { get { return confirmStep; } }
+        public FullMapTapTarget TapTarget { get { return tapTarget; } }
         public bool BuiltInPointerInput { get { return builtInPointerInput; } }
         public bool Fling { get { return fling; } }
         public bool DoubleTapZoom { get { return doubleTapZoom; } }
@@ -60,6 +62,11 @@ namespace Gley.NavigationSystem
         internal void SetConfirmStep(bool value)
         {
             confirmStep = value;
+        }
+
+        internal void SetTapTarget(FullMapTapTarget value)
+        {
+            tapTarget = value;
         }
 
         internal void SetBuiltInPointerInput(bool value)

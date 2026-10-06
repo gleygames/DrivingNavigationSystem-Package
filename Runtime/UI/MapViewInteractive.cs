@@ -141,6 +141,11 @@ namespace Gley.NavigationSystem
             }
             else
             {
+                if (settings.TapTarget == FullMapTapTarget.MarkersOnly)
+                {
+                    return;
+                }
+
                 Vector2 mapPoint = view.ViewportToMap(screenPoint);
                 Vector3 truePoint = activeManager.Frame.MapToTrue(mapPoint, activeManager.Frame.Center.y);
                 worldPoint = activeManager.Converter.TrueToWorld(truePoint);

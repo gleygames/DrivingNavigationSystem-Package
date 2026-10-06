@@ -13,6 +13,7 @@ namespace Gley.NavigationSystem.Editor
             "manager",
             "interactionSettings.builtInPointerInput",
             "interactionSettings.confirmStep",
+            "interactionSettings.tapTarget",
             "interactionSettings.openZoomMeters",
             "interactionSettings.zoomOutMode",
             "interactionSettings.crosshairMode",
@@ -58,6 +59,13 @@ namespace Gley.NavigationSystem.Editor
             drawer.DrawHeader("Interaction");
             drawer.DrawProperty(serializedObject, "interactionSettings.builtInPointerInput");
             drawer.DrawProperty(serializedObject, "interactionSettings.confirmStep");
+            drawer.DrawProperty(serializedObject, "interactionSettings.tapTarget");
+            SerializedProperty tapTarget = serializedObject.FindProperty("interactionSettings.tapTarget");
+            if (tapTarget != null && tapTarget.enumValueIndex == (int)FullMapTapTarget.MarkersOnly)
+            {
+                EditorGUILayout.HelpBox("Only markers with Can Be Destination on start a route. Tap radius: Advanced > Marker Tap Radius.", MessageType.Info);
+            }
+
             drawer.DrawProperty(serializedObject, "interactionSettings.openZoomMeters");
             drawer.DrawProperty(serializedObject, "interactionSettings.zoomOutMode");
             drawer.DrawProperty(serializedObject, "interactionSettings.crosshairMode");
