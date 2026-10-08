@@ -54,6 +54,7 @@ namespace Gley.NavigationSystem.Editor
         private string playerMarkerPrefabPath;
         private string destinationMarkerPrefabPath;
         private string previewPinPrefabPath;
+        private string defaultMarkerPrefabPath;
         private string defaultFormatterPath;
         private string inputActionsPath;
         private float pendingYawOffset;
@@ -102,6 +103,7 @@ namespace Gley.NavigationSystem.Editor
             playerMarkerPrefabPath = prefabFolder + "/PlayerMarker.prefab";
             destinationMarkerPrefabPath = prefabFolder + "/DestinationMarker.prefab";
             previewPinPrefabPath = prefabFolder + "/PreviewPin.prefab";
+            defaultMarkerPrefabPath = prefabFolder + "/DefaultMarker.prefab";
             defaultFormatterPath = rootFolder + "/Graphics/Presets/DefaultFormatter.asset";
             inputActionsPath = rootFolder + "/Runtime.InputSystem/NavigationMapControls.inputactions";
         }
@@ -164,6 +166,7 @@ namespace Gley.NavigationSystem.Editor
             changed |= AssignPrefabIfMissing(serializedObject, "runtime.playerMarkerPrefab", playerMarkerPrefabPath);
             changed |= AssignPrefabIfMissing(serializedObject, "runtime.destinationMarkerPrefab", destinationMarkerPrefabPath);
             changed |= AssignPrefabIfMissing(serializedObject, "runtime.previewPinPrefab", previewPinPrefabPath);
+            changed |= AssignPrefabIfMissing(serializedObject, "runtime.defaultMarkerPrefab", defaultMarkerPrefabPath);
             SerializedProperty formatterProperty = serializedObject.FindProperty("runtime.formatter");
             if (formatterProperty.objectReferenceValue == null)
             {

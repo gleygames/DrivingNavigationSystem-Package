@@ -28,7 +28,6 @@ namespace Gley.NavigationSystem
         private MapView view;
         private RectTransform arrowContainer;
         private RectTransform labelContainer;
-        [SerializeField] private GameObject defaultMarkerPrefab;
         [SerializeField] private float cullMarginFraction = 0.1f;
 
         public void UpdateMarkerLayerVisuals(float deltaTime)
@@ -118,11 +117,6 @@ namespace Gley.NavigationSystem
         internal void SetView(MapView value)
         {
             view = value;
-        }
-
-        internal void SetDefaultMarkerPrefab(GameObject value)
-        {
-            defaultMarkerPrefab = value;
         }
 
         internal void SetCullMarginFraction(float value)
@@ -491,7 +485,7 @@ namespace Gley.NavigationSystem
             GameObject resolvedPrefab = prefab;
             if (resolvedPrefab == null)
             {
-                resolvedPrefab = defaultMarkerPrefab;
+                resolvedPrefab = view.Manager.RuntimeSettings.DefaultMarkerPrefab;
             }
             if (resolvedPrefab == null)
             {

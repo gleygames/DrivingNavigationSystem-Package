@@ -21,6 +21,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private GameObject playerMarkerPrefab;
         [SerializeField] private GameObject destinationMarkerPrefab;
         [SerializeField] private GameObject previewPinPrefab;
+        [SerializeField] private GameObject defaultMarkerPrefab;
         [SerializeField] private float avoidMultiplier = DefaultAvoidMultiplier;
         [SerializeField] private float preferMultiplier = DefaultPreferMultiplier;
         [SerializeField] private float startSnapDistance = DefaultStartSnapDistance;
@@ -37,6 +38,7 @@ namespace Gley.NavigationSystem
         public GameObject PlayerMarkerPrefab { get { return playerMarkerPrefab; } }
         public GameObject DestinationMarkerPrefab { get { return destinationMarkerPrefab; } }
         public GameObject PreviewPinPrefab { get { return previewPinPrefab; } }
+        public GameObject DefaultMarkerPrefab { get { return defaultMarkerPrefab; } }
         public float AvoidMultiplier { get { return avoidMultiplier; } }
         public float PreferMultiplier { get { return preferMultiplier; } }
         public float StartSnapDistance { get { return startSnapDistance; } }
@@ -67,6 +69,11 @@ namespace Gley.NavigationSystem
         internal void SetPreviewPinPrefab(GameObject value)
         {
             previewPinPrefab = value;
+        }
+
+        internal void SetDefaultMarkerPrefab(GameObject value)
+        {
+            defaultMarkerPrefab = value;
         }
 
         internal void SetAvoidMultiplier(float value)

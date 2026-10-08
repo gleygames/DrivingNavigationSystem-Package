@@ -27,6 +27,7 @@ namespace Gley.NavigationSystem.Editor
             "runtime.playerMarkerPrefab",
             "runtime.destinationMarkerPrefab",
             "runtime.previewPinPrefab",
+            "runtime.defaultMarkerPrefab",
             "runtime.avoidMultiplier",
             "runtime.preferMultiplier",
             "runtime.startSnapDistance",
