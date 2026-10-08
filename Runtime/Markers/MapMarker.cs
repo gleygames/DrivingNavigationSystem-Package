@@ -9,6 +9,7 @@ namespace Gley.NavigationSystem
 
         [SerializeField] private NavigationManager manager;
         [SerializeField] private GameObject prefab;
+        [SerializeField] private string displayName = "";
         [SerializeField] private MarkerRotationMode rotationMode = MarkerRotationMode.Upright;
         [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
         [SerializeField] private bool isStatic;
@@ -17,6 +18,15 @@ namespace Gley.NavigationSystem
         private NavigationManager cachedManager;
 
         public GameObject Prefab { get { return prefab; } }
+        public string DisplayName
+        {
+            get { return displayName; }
+            set
+            {
+                displayName = value;
+                RefreshVisuals();
+            }
+        }
         public MarkerRotationMode RotationMode { get { return rotationMode; } }
         public int ChannelMask { get { return channelMask; } }
         public bool IsStatic { get { return isStatic; } }
@@ -33,6 +43,14 @@ namespace Gley.NavigationSystem
 
             cachedManager = found;
             found.AddMarker(this);
+        }
+
+        public void RefreshVisuals()
+        {
+            if (cachedManager != null)
+            {
+                cachedManager.RefreshMarkerVisuals(this);
+            }
         }
 
         private NavigationManager FindManager()
@@ -81,6 +99,14 @@ namespace Gley.NavigationSystem
         internal void SetShowOffScreenArrow(bool value)
         {
             showOffScreenArrow = value;
+        }
+
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+            {
+                RefreshVisuals();
+            }
         }
 
         private void OnDisable()

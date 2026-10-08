@@ -19,6 +19,7 @@ namespace Gley.NavigationSystem
         private readonly Dictionary<GameObject, IMapMarkerVisual[]> visualsOf = new Dictionary<GameObject, IMapMarkerVisual[]>();
         private readonly Dictionary<GameObject, IMapMarkerSelectable[]> selectablesOf = new Dictionary<GameObject, IMapMarkerSelectable[]>();
         private readonly Dictionary<int, int> activeGenerations = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> activeVisualVersions = new Dictionary<int, int>();
         private readonly Dictionary<int, GameObject> activeArrows = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, float> arrowDistanceShown = new Dictionary<int, float>();
         private readonly List<int> currentVisible = new List<int>();
@@ -127,8 +128,18 @@ namespace Gley.NavigationSystem
                         }
                         activeInstances.Add(index, instance);
                         activeGenerations[index] = entry.Generation;
-                        BindVisuals(instance, entry.Marker);
-                        SetInstanceSelected(instance, entry.Marker != null && ReferenceEquals(entry.Marker, selected));
+                        activeVisualVersions[index] = entry.VisualVersion;
+                        BindInstance(instance, entry, selected);
+                    }
+                    else
+                    {
+                        int shownVersion;
+                        if (activeVisualVersions.TryGetValue(index, out shownVersion) && shownVersion != entry.VisualVersion)
+                        {
+                            activeVisualVersions[index] = entry.VisualVersion;
+                            UnbindVisuals(instance);
+                            BindInstance(instance, entry, selected);
+                        }
                     }
                     if (selected != null && ReferenceEquals(entry.Marker, selected))
                     {
@@ -305,8 +316,15 @@ namespace Gley.NavigationSystem
             }
             activeInstances.Remove(index);
             activeGenerations.Remove(index);
+            activeVisualVersions.Remove(index);
             UnbindVisuals(instance);
             ReturnToPool(instance);
+        }
+
+        private void BindInstance(GameObject instance, MarkerEntry entry, MapMarker selected)
+        {
+            BindVisuals(instance, entry.Marker);
+            SetInstanceSelected(instance, entry.Marker != null && ReferenceEquals(entry.Marker, selected));
         }
 
         private void BindVisuals(GameObject instance, MapMarker marker)

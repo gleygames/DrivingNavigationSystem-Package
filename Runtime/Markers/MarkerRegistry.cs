@@ -47,6 +47,15 @@ namespace Gley.NavigationSystem
             markerToIndex.Add(marker, index);
         }
 
+        public void MarkVisualsChanged(MapMarker marker)
+        {
+            int index;
+            if (markerToIndex.TryGetValue(marker, out index))
+            {
+                entries[index].VisualVersion++;
+            }
+        }
+
         private int AcquireIndex()
         {
             int index;

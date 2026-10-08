@@ -86,6 +86,7 @@ namespace Gley.NavigationSystem
         public event Action BackInsideMap;
         public event Action<MapMarker> MarkerSelected;
         public event Action<MapMarker> MarkerDeselected;
+        internal event Action<MapMarker> MarkerVisualsChanged;
 
         public NavigationMap ActiveMap { get; private set; }
         public Transform Car { get { return car; } }
@@ -416,6 +417,24 @@ namespace Gley.NavigationSystem
         public void ClearSelection()
         {
             RunOrQueue(new NavigationCommand(NavigationCommandType.ClearSelection, null));
+        }
+
+        internal void RefreshMarkerVisuals(MapMarker marker)
+        {
+            markers.MarkVisualsChanged(marker);
+
+            BeginDispatch();
+            try
+            {
+                if (MarkerVisualsChanged != null)
+                {
+                    MarkerVisualsChanged(marker);
+                }
+            }
+            finally
+            {
+                EndDispatch();
+            }
         }
 
         public void RequestRoute(NavigationRouteRequest request, Action<Route> callback)

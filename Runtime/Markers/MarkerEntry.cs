@@ -26,5 +26,6 @@ namespace Gley.NavigationSystem
         public bool IsPlayer { get; set; }
         public bool Alive { get; set; }
         public int Generation { get; set; }
+        public int VisualVersion { get; set; }
     }
 }
