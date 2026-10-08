@@ -17,6 +17,7 @@ namespace Gley.NavigationSystem
         private readonly Dictionary<GameObject, Vector2> arrowLabelOffsets = new Dictionary<GameObject, Vector2>();
         private readonly Dictionary<int, GameObject> activeInstances = new Dictionary<int, GameObject>();
         private readonly Dictionary<GameObject, IMapMarkerVisual[]> visualsOf = new Dictionary<GameObject, IMapMarkerVisual[]>();
+        private readonly Dictionary<GameObject, IMapMarkerSelectable[]> selectablesOf = new Dictionary<GameObject, IMapMarkerSelectable[]>();
         private readonly Dictionary<int, int> activeGenerations = new Dictionary<int, int>();
         private readonly Dictionary<int, GameObject> activeArrows = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, float> arrowDistanceShown = new Dictionary<int, float>();
@@ -28,6 +29,7 @@ namespace Gley.NavigationSystem
         private readonly ProfilerMarker layerMarker = new ProfilerMarker("Gley.Nav.MarkerLayer");
 
         private MapView view;
+        private MapMarker shownSelection;
         private RectTransform arrowContainer;
         private RectTransform labelContainer;
         [SerializeField] private float cullMarginFraction = 0.1f;
@@ -70,6 +72,14 @@ namespace Gley.NavigationSystem
 
                 ReleaseInactive();
 
+                MapMarker selected = manager.SelectedMarker;
+                if (!ReferenceEquals(selected, shownSelection))
+                {
+                    ApplySelectionChange(manager, shownSelection, selected);
+                    shownSelection = selected;
+                }
+
+                GameObject selectedInstance = null;
                 Vector2 halfSize = viewportRect.size * 0.5f;
                 for (int i = 0; i < currentVisible.Count; i++)
                 {
@@ -118,8 +128,18 @@ namespace Gley.NavigationSystem
                         activeInstances.Add(index, instance);
                         activeGenerations[index] = entry.Generation;
                         BindVisuals(instance, entry.Marker);
+                        SetInstanceSelected(instance, entry.Marker != null && ReferenceEquals(entry.Marker, selected));
+                    }
+                    if (selected != null && ReferenceEquals(entry.Marker, selected))
+                    {
+                        selectedInstance = instance;
                     }
                     PositionMarker(instance, entry, viewportPoint, frame);
+                }
+
+                if (selectedInstance != null && selectedInstance.transform.GetSiblingIndex() != transform.childCount - 1)
+                {
+                    selectedInstance.transform.SetAsLastSibling();
                 }
             }
         }
@@ -198,6 +218,8 @@ namespace Gley.NavigationSystem
 
         private void ReleaseAllActive()
         {
+            shownSelection = null;
+
             releaseScratch.Clear();
             foreach (KeyValuePair<int, GameObject> pair in activeInstances)
             {
@@ -310,6 +332,37 @@ namespace Gley.NavigationSystem
             for (int i = 0; i < visuals.Length; i++)
             {
                 visuals[i].Unbind();
+            }
+        }
+
+        private void ApplySelectionChange(NavigationManager manager, MapMarker oldSelection, MapMarker newSelection)
+        {
+            foreach (KeyValuePair<int, GameObject> pair in activeInstances)
+            {
+                MapMarker marker = manager.Markers.GetEntry(pair.Key).Marker;
+                if (marker == null)
+                {
+                    continue;
+                }
+
+                bool isNew = ReferenceEquals(marker, newSelection);
+                if (isNew || ReferenceEquals(marker, oldSelection))
+                {
+                    SetInstanceSelected(pair.Value, isNew);
+                }
+            }
+        }
+
+        private void SetInstanceSelected(GameObject instance, bool selected)
+        {
+            IMapMarkerSelectable[] selectables;
+            if (!selectablesOf.TryGetValue(instance, out selectables))
+            {
+                return;
+            }
+            for (int i = 0; i < selectables.Length; i++)
+            {
+                selectables[i].SetSelected(selected);
             }
         }
 
@@ -536,6 +589,7 @@ namespace Gley.NavigationSystem
             if (!visualsOf.ContainsKey(instance))
             {
                 visualsOf.Add(instance, instance.GetComponentsInChildren<IMapMarkerVisual>(true));
+                selectablesOf.Add(instance, instance.GetComponentsInChildren<IMapMarkerSelectable>(true));
             }
             return instance;
         }
