@@ -27,6 +27,9 @@ namespace Gley.NavigationSystem.Editor
             "previewPanel.etaText",
             "previewPanel.confirmButton",
             "previewPanel.cancelButton",
+            "infoPanel.panelRoot",
+            "infoPanel.titleText",
+            "infoPanel.closeButton",
             "buttons.stopButton",
             "buttons.centerButton",
             "buttons.closeButton",
@@ -94,6 +97,12 @@ namespace Gley.NavigationSystem.Editor
             DrawTextSlotWarning("previewPanel.etaText");
             drawer.DrawProperty(serializedObject, "previewPanel.confirmButton");
             drawer.DrawProperty(serializedObject, "previewPanel.cancelButton");
+
+            drawer.DrawHeader("Info panel");
+            drawer.DrawProperty(serializedObject, "infoPanel.panelRoot");
+            drawer.DrawProperty(serializedObject, "infoPanel.titleText");
+            DrawTextSlotWarning("infoPanel.titleText");
+            drawer.DrawProperty(serializedObject, "infoPanel.closeButton");
 
             drawer.DrawHeader("Buttons");
             drawer.DrawProperty(serializedObject, "buttons.stopButton");

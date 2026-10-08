@@ -16,12 +16,14 @@ namespace Gley.NavigationSystem
         [SerializeField] private FullMapInteractionSettings interactionSettings = new FullMapInteractionSettings();
         [SerializeField] private Image crosshairImage;
         [SerializeField] private PreviewPanelSlots previewPanel = new PreviewPanelSlots();
+        [SerializeField] private InfoPanelSlots infoPanel = new InfoPanelSlots();
         [SerializeField] private FullMapButtons buttons = new FullMapButtons();
         private NavigationManager cachedManager;
         private MapView view;
         private MapViewInteractive interactive;
         private PointerInputAdapter pointerInput;
         private PreviewPanel panel;
+        private InfoPanel info;
         private NavigationControls controls;
         private bool partsEnabled;
 
@@ -33,6 +35,7 @@ namespace Gley.NavigationSystem
         public MapViewSettings ViewSettings { get { return viewSettings; } }
         public FullMapInteractionSettings InteractionSettings { get { return interactionSettings; } }
         public PreviewPanelSlots PreviewPanelSlots { get { return previewPanel; } }
+        public InfoPanelSlots InfoPanelSlots { get { return infoPanel; } }
         public FullMapButtons Buttons { get { return buttons; } }
         internal RectTransform Viewport { get { return viewport; } }
 
@@ -52,6 +55,7 @@ namespace Gley.NavigationSystem
             view.Enable(cachedManager);
             interactive.Enable();
             panel.Enable(cachedManager);
+            info.Enable(cachedManager);
             controls.Enable(cachedManager);
             partsEnabled = true;
         }
@@ -200,6 +204,7 @@ namespace Gley.NavigationSystem
             interactive = new MapViewInteractive(this, view, interactionSettings, crosshairImage);
             pointerInput = new PointerInputAdapter(interactive, viewport, interactionSettings);
             panel = new PreviewPanel(previewPanel, viewSettings);
+            info = new InfoPanel(infoPanel, viewSettings);
             controls = new NavigationControls(this, interactive, buttons);
             return true;
         }
@@ -230,6 +235,7 @@ namespace Gley.NavigationSystem
             }
 
             controls.Disable();
+            info.Disable();
             panel.Disable();
             interactive.Disable();
             view.Disable();
