@@ -12,7 +12,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private MarkerRotationMode rotationMode = MarkerRotationMode.Upright;
         [SerializeField] private int channelMask = MinimapChannelBit | FullMapChannelBit;
         [SerializeField] private bool isStatic;
-        [SerializeField] private bool canBeDestination;
+        [SerializeField] private MarkerTapAction tapAction = MarkerTapAction.None;
         [SerializeField] private bool showOffScreenArrow;
         private NavigationManager cachedManager;
 
@@ -20,7 +20,7 @@ namespace Gley.NavigationSystem
         public MarkerRotationMode RotationMode { get { return rotationMode; } }
         public int ChannelMask { get { return channelMask; } }
         public bool IsStatic { get { return isStatic; } }
-        public bool CanBeDestination { get { return canBeDestination; } }
+        public MarkerTapAction TapAction { get { return tapAction; } }
         public bool ShowOffScreenArrow { get { return showOffScreenArrow; } }
 
         private void OnEnable()
@@ -73,9 +73,9 @@ namespace Gley.NavigationSystem
             isStatic = value;
         }
 
-        internal void SetCanBeDestination(bool value)
+        internal void SetTapAction(MarkerTapAction value)
         {
-            canBeDestination = value;
+            tapAction = value;
         }
 
         internal void SetShowOffScreenArrow(bool value)

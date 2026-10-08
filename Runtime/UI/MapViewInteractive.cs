@@ -135,12 +135,20 @@ namespace Gley.NavigationSystem
             Vector3 worldPoint;
             MarkerLayer markerLayer = view.MarkerLayer;
             Vector3 markerTruePosition;
-            if (markerLayer != null && markerLayer.FindNearestDestinationMarker(screenPoint, settings.MarkerTapRadius, out marker, out markerTruePosition))
+            MarkerTapAction tapAction;
+            if (markerLayer != null && markerLayer.FindNearestTappableMarker(screenPoint, settings.MarkerTapRadius, out marker, out markerTruePosition, out tapAction))
             {
+                activeManager.SelectMarker(marker);
+                if (tapAction != MarkerTapAction.Destination)
+                {
+                    return;
+                }
+
                 worldPoint = activeManager.Converter.TrueToWorld(markerTruePosition);
             }
             else
             {
+                activeManager.ClearSelection();
                 if (settings.TapTarget == FullMapTapTarget.MarkersOnly)
                 {
                     return;
@@ -255,6 +263,7 @@ namespace Gley.NavigationSystem
         {
             if (manager != null)
             {
+                manager.ClearSelection();
                 manager.CancelPreview();
             }
         }

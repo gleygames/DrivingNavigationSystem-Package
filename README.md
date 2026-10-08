@@ -56,6 +56,7 @@ The default UI prefabs stretch to fill their parent and don't handle the screen 
 | `void PreviewDestination(Vector3 worldPoint)` | Computes a route to the point without starting it. Raises `PreviewReady` or `PreviewFailed`. |
 | `void ConfirmPreview()` | Starts navigating along the current preview. |
 | `void CancelPreview()` | Discards the preview. Raises `PreviewCanceled`. |
+| `void ClearSelection()` | Clears the selected marker. Raises `MarkerDeselected`. |
 | `void StartNavigation(Vector3 worldPoint)` | Computes a route and starts navigating immediately. Raises `NavigationStarted` or `RouteFailed`. |
 | `void StopNavigation()` | Stops the active route. Raises `NavigationStopped` with `StopReason.StopCalled`. |
 | `void SetRouteMode(RouteMode mode)` | Shortest or fastest routing. Reroutes an active route. |
@@ -78,6 +79,7 @@ The default UI prefabs stretch to fill their parent and don't handle the screen 
 | `PreviewRoute` | `Route` | Current preview, or `null`. |
 | `HasActiveRoute` | `bool` | A route is being followed. |
 | `HasPreview` | `bool` | A preview exists. |
+| `SelectedMarker` | `MapMarker` | The selected marker, or null. |
 | `RemainingDistance` | `float` | Meters left on the active route, `0` with no route. |
 | `Eta` | `float` | Seconds left on the active route, `0` with no route. |
 | `TrimDistance` | `float` | Meters of the route already driven. |
@@ -107,6 +109,8 @@ The default UI prefabs stretch to fill their parent and don't handle the screen 
 | `BackOnRoad` | `Action` | The car returned to a road. |
 | `OutsideMap` | `Action` | The car left the map rectangle. |
 | `BackInsideMap` | `Action` | The car re-entered the map rectangle. |
+| `MarkerSelected` | `Action<MapMarker>` | A marker became the selected marker. |
+| `MarkerDeselected` | `Action<MapMarker>` | The selected marker was cleared or replaced. |
 
 ## NavigationEvents
 
@@ -116,6 +120,7 @@ The default UI prefabs stretch to fill their parent and don't handle the screen 
 | --- | --- |
 | `MapChanged`, `CarChanged`, `PreviewReady`, `PreviewCanceled`, `NavigationStarted`, `Arrived`, `OffRoad`, `BackOnRoad`, `OutsideMap`, `BackInsideMap` | `UnityEvent` |
 | `PreviewFailed`, `RouteFailed` | `FailureReasonUnityEvent` (`UnityEvent<FailureReason>`) |
+| `MarkerSelected`, `MarkerDeselected` | `MapMarkerUnityEvent` (`UnityEvent<MapMarker>`) |
 | `NavigationStopped` | `StopReasonUnityEvent` (`UnityEvent<StopReason>`) |
 | `Rerouted` | `RerouteReasonUnityEvent` (`UnityEvent<RerouteReason>`) |
 
@@ -202,7 +207,7 @@ Struct describing one road piece of a route.
 | `MarkerRotationMode RotationMode` | Upright, follow the object heading, or follow the map. |
 | `int ChannelMask` | Which map views show it (bit per channel, see `NavigationSettings.ChannelCount`). |
 | `bool IsStatic` | The object never moves, so its position is read once. |
-| `bool CanBeDestination` | Tapping it on the full map previews a route to it. |
+| `MarkerTapAction TapAction` | What a tap on the full map does: None, Select (selects it), or Destination (selects it and previews a route to it). |
 | `bool ShowOffScreenArrow` | Show an edge arrow when it is outside the view. |
 
 ## NavigationMap

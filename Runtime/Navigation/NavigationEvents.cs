@@ -20,6 +20,11 @@ namespace Gley.NavigationSystem
     {
     }
 
+    [Serializable]
+    public class MapMarkerUnityEvent : UnityEvent<MapMarker>
+    {
+    }
+
     public class NavigationEvents : MonoBehaviour
     {
         [SerializeField] private NavigationManager manager;
@@ -39,6 +44,8 @@ namespace Gley.NavigationSystem
         [SerializeField] private UnityEvent onBackOnRoad = new UnityEvent();
         [SerializeField] private UnityEvent onOutsideMap = new UnityEvent();
         [SerializeField] private UnityEvent onBackInsideMap = new UnityEvent();
+        [SerializeField] private MapMarkerUnityEvent onMarkerSelected = new MapMarkerUnityEvent();
+        [SerializeField] private MapMarkerUnityEvent onMarkerDeselected = new MapMarkerUnityEvent();
 
         public UnityEvent MapChanged { get { return onMapChanged; } }
         public UnityEvent CarChanged { get { return onCarChanged; } }
@@ -54,6 +61,8 @@ namespace Gley.NavigationSystem
         public UnityEvent BackOnRoad { get { return onBackOnRoad; } }
         public UnityEvent OutsideMap { get { return onOutsideMap; } }
         public UnityEvent BackInsideMap { get { return onBackInsideMap; } }
+        public MapMarkerUnityEvent MarkerSelected { get { return onMarkerSelected; } }
+        public MapMarkerUnityEvent MarkerDeselected { get { return onMarkerDeselected; } }
 
         private void OnEnable()
         {
@@ -79,6 +88,8 @@ namespace Gley.NavigationSystem
             found.BackOnRoad += ForwardBackOnRoad;
             found.OutsideMap += ForwardOutsideMap;
             found.BackInsideMap += ForwardBackInsideMap;
+            found.MarkerSelected += ForwardMarkerSelected;
+            found.MarkerDeselected += ForwardMarkerDeselected;
         }
 
         private NavigationManager FindManager()
@@ -165,6 +176,16 @@ namespace Gley.NavigationSystem
             onBackInsideMap.Invoke();
         }
 
+        private void ForwardMarkerSelected(MapMarker marker)
+        {
+            onMarkerSelected.Invoke(marker);
+        }
+
+        private void ForwardMarkerDeselected(MapMarker marker)
+        {
+            onMarkerDeselected.Invoke(marker);
+        }
+
         private void OnDisable()
         {
             if (cachedManager == null)
@@ -186,6 +207,8 @@ namespace Gley.NavigationSystem
             cachedManager.BackOnRoad -= ForwardBackOnRoad;
             cachedManager.OutsideMap -= ForwardOutsideMap;
             cachedManager.BackInsideMap -= ForwardBackInsideMap;
+            cachedManager.MarkerSelected -= ForwardMarkerSelected;
+            cachedManager.MarkerDeselected -= ForwardMarkerDeselected;
             cachedManager = null;
         }
     }

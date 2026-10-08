@@ -51,6 +51,7 @@ namespace Gley.NavigationSystem
         private Vector3 activeDestination;
         private Vector3 previewDestination;
         private MapMarker previewMarker;
+        private MapMarker selectedMarker;
         [SerializeField] private float carYawOffset;
         private float drivenDistance;
         private float roadHeadingSign = 1f;
@@ -83,6 +84,8 @@ namespace Gley.NavigationSystem
         public event Action BackOnRoad;
         public event Action OutsideMap;
         public event Action BackInsideMap;
+        public event Action<MapMarker> MarkerSelected;
+        public event Action<MapMarker> MarkerDeselected;
 
         public NavigationMap ActiveMap { get; private set; }
         public Transform Car { get { return car; } }
@@ -176,6 +179,7 @@ namespace Gley.NavigationSystem
         public bool IsOutsideMap { get; private set; }
         public bool HasActiveRoute { get { return hasActiveRoute; } }
         public bool HasPreview { get { return hasPreview; } }
+        public MapMarker SelectedMarker { get { return selectedMarker; } }
         internal bool CarTeleported { get { return motion.Teleported; } }
         internal bool HasRoadHeading { get; private set; }
 
@@ -402,6 +406,16 @@ namespace Gley.NavigationSystem
         public void RemoveMarker(MapMarker marker)
         {
             RunOrQueue(new NavigationCommand(NavigationCommandType.RemoveMarker, marker));
+        }
+
+        internal void SelectMarker(MapMarker marker)
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.SelectMarker, marker));
+        }
+
+        public void ClearSelection()
+        {
+            RunOrQueue(new NavigationCommand(NavigationCommandType.ClearSelection, null));
         }
 
         public void RequestRoute(NavigationRouteRequest request, Action<Route> callback)
@@ -1279,6 +1293,38 @@ namespace Gley.NavigationSystem
             }
         }
 
+        private void RaiseMarkerSelected(MapMarker marker)
+        {
+            BeginDispatch();
+            try
+            {
+                if (MarkerSelected != null)
+                {
+                    MarkerSelected(marker);
+                }
+            }
+            finally
+            {
+                EndDispatch();
+            }
+        }
+
+        private void RaiseMarkerDeselected(MapMarker marker)
+        {
+            BeginDispatch();
+            try
+            {
+                if (MarkerDeselected != null)
+                {
+                    MarkerDeselected(marker);
+                }
+            }
+            finally
+            {
+                EndDispatch();
+            }
+        }
+
         private Route CreateRoute()
         {
             Route route = new Route();
@@ -1365,6 +1411,12 @@ namespace Gley.NavigationSystem
                     break;
                 case NavigationCommandType.RemoveMarker:
                     ExecuteRemoveMarker(command.Marker);
+                    break;
+                case NavigationCommandType.SelectMarker:
+                    ExecuteSelectMarker(command.Marker);
+                    break;
+                case NavigationCommandType.ClearSelection:
+                    ExecuteClearSelection();
                     break;
             }
         }
@@ -1582,6 +1634,40 @@ namespace Gley.NavigationSystem
         private void ExecuteRemoveMarker(MapMarker marker)
         {
             markers.RemoveObject(marker);
+            if (marker == selectedMarker)
+            {
+                ExecuteClearSelection();
+            }
+        }
+
+        private void ExecuteSelectMarker(MapMarker marker)
+        {
+            if (marker == null)
+            {
+                ExecuteClearSelection();
+                return;
+            }
+
+            if (marker == selectedMarker)
+            {
+                return;
+            }
+
+            ExecuteClearSelection();
+            selectedMarker = marker;
+            RaiseMarkerSelected(marker);
+        }
+
+        private void ExecuteClearSelection()
+        {
+            if (selectedMarker == null)
+            {
+                return;
+            }
+
+            MapMarker old = selectedMarker;
+            selectedMarker = null;
+            RaiseMarkerDeselected(old);
         }
 
         private void AddOrMoveDestinationMarker(Vector3 truePosition)

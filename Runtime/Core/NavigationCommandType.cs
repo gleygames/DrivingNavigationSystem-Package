@@ -13,6 +13,8 @@ namespace Gley.NavigationSystem
         SetRoadTypePreference,
         SetUTurnRule,
         AddMarker,
-        RemoveMarker
+        RemoveMarker,
+        SelectMarker,
+        ClearSelection
     }
 }

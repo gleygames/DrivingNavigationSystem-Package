@@ -144,10 +144,11 @@ namespace Gley.NavigationSystem
             return null;
         }
 
-        internal bool FindNearestDestinationMarker(Vector2 viewportPoint, float radius, out MapMarker marker, out Vector3 truePosition)
+        internal bool FindNearestTappableMarker(Vector2 viewportPoint, float radius, out MapMarker marker, out Vector3 truePosition, out MarkerTapAction tapAction)
         {
             marker = null;
             truePosition = Vector3.zero;
+            tapAction = MarkerTapAction.None;
 
             if (view == null || view.Manager == null || view.Frame == null)
             {
@@ -162,7 +163,7 @@ namespace Gley.NavigationSystem
             for (int i = 0; i < currentVisible.Count; i++)
             {
                 MarkerEntry entry = markers.GetEntry(currentVisible[i]);
-                if (entry.Marker == null || !entry.CanBeDestination)
+                if (entry.Marker == null || entry.TapAction == MarkerTapAction.None)
                 {
                     continue;
                 }
@@ -178,6 +179,7 @@ namespace Gley.NavigationSystem
                 bestDistanceSq = distanceSq;
                 marker = entry.Marker;
                 truePosition = entry.TruePosition;
+                tapAction = entry.TapAction;
                 found = true;
             }
 

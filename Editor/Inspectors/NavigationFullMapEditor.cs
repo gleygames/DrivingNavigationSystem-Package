@@ -63,7 +63,7 @@ namespace Gley.NavigationSystem.Editor
             SerializedProperty tapTarget = serializedObject.FindProperty("interactionSettings.tapTarget");
             if (tapTarget != null && tapTarget.enumValueIndex == (int)FullMapTapTarget.MarkersOnly)
             {
-                EditorGUILayout.HelpBox("Only markers with Can Be Destination on start a route. Tap radius: Advanced > Marker Tap Radius.", MessageType.Info);
+                EditorGUILayout.HelpBox("Only markers with Tap Action Select or Destination react to taps. Tap radius: Advanced > Marker Tap Radius.", MessageType.Info);
             }
 
             drawer.DrawProperty(serializedObject, "interactionSettings.openZoomMeters");

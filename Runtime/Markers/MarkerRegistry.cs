@@ -34,7 +34,7 @@ namespace Gley.NavigationSystem
             entry.RotationMode = marker.RotationMode;
             entry.ChannelMask = marker.ChannelMask;
             entry.IsStatic = marker.IsStatic;
-            entry.CanBeDestination = marker.CanBeDestination;
+            entry.TapAction = marker.TapAction;
             entry.ShowArrow = marker.ShowOffScreenArrow;
             entry.IsPlayer = false;
             entry.Alive = true;
@@ -91,7 +91,7 @@ namespace Gley.NavigationSystem
             entry.RotationMode = MarkerRotationMode.Upright;
             entry.ChannelMask = channelMask;
             entry.IsStatic = true;
-            entry.CanBeDestination = false;
+            entry.TapAction = MarkerTapAction.None;
             entry.ShowArrow = showArrow;
             entry.IsPlayer = false;
             entry.Alive = true;
@@ -137,7 +137,7 @@ namespace Gley.NavigationSystem
             entry.RotationMode = MarkerRotationMode.FollowHeading;
             entry.ChannelMask = channelMask;
             entry.IsStatic = false;
-            entry.CanBeDestination = false;
+            entry.TapAction = MarkerTapAction.None;
             entry.ShowArrow = false;
             entry.IsPlayer = true;
             entry.Alive = true;

@@ -21,7 +21,7 @@ namespace Gley.NavigationSystem
         public int ChannelMask { get; set; }
         public bool IsStatic { get; set; }
         public bool Initialized { get; set; }
-        public bool CanBeDestination { get; set; }
+        public MarkerTapAction TapAction { get; set; }
         public bool ShowArrow { get; set; }
         public bool IsPlayer { get; set; }
         public bool Alive { get; set; }
