@@ -21,6 +21,7 @@ namespace Gley.NavigationSystem.Editor
             "interactionSettings.doubleTapZoom",
             "viewSettings.showOffScreenArrows",
             "viewSettings.showArrowDistance",
+            "viewSettings.showMarkerLabels",
             "previewPanel.panelRoot",
             "previewPanel.distanceText",
             "previewPanel.etaText",
@@ -73,6 +74,9 @@ namespace Gley.NavigationSystem.Editor
             drawer.DrawHeader("Gestures");
             drawer.DrawProperty(serializedObject, "interactionSettings.fling");
             drawer.DrawProperty(serializedObject, "interactionSettings.doubleTapZoom");
+
+            drawer.DrawHeader("Markers");
+            drawer.DrawProperty(serializedObject, "viewSettings.showMarkerLabels");
 
             drawer.DrawHeader("Off-screen arrows");
             drawer.DrawProperty(serializedObject, "viewSettings.showOffScreenArrows");

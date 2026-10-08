@@ -17,6 +17,7 @@ namespace Gley.NavigationSystem
         [SerializeField] private bool showPreview;
         [SerializeField] private bool showOffScreenArrows = true;
         [SerializeField] private bool showArrowDistance = true;
+        [SerializeField] private bool showMarkerLabels = true;
 
         public RouteStyle RouteStyle { get { return routeStyle; } }
         public GameObject ArrowPrefab { get { return arrowPrefab; } }
@@ -27,6 +28,7 @@ namespace Gley.NavigationSystem
         public bool ShowPreview { get { return showPreview; } }
         public bool ShowOffScreenArrows { get { return showOffScreenArrows; } }
         public bool ShowArrowDistance { get { return showArrowDistance; } }
+        public bool ShowMarkerLabels { get { return showMarkerLabels; } }
 
         public MapViewSettings()
         {
@@ -34,10 +36,11 @@ namespace Gley.NavigationSystem
             showPreview = true;
         }
 
-        public MapViewSettings(int channelMask, bool showPreview)
+        public MapViewSettings(int channelMask, bool showPreview, bool showMarkerLabels)
         {
             this.channelMask = channelMask;
             this.showPreview = showPreview;
+            this.showMarkerLabels = showMarkerLabels;
         }
 
         internal void SetRouteStyle(RouteStyle value)
@@ -83,6 +86,11 @@ namespace Gley.NavigationSystem
         internal void SetShowArrowDistance(bool value)
         {
             showArrowDistance = value;
+        }
+
+        internal void SetShowMarkerLabels(bool value)
+        {
+            showMarkerLabels = value;
         }
     }
 }

@@ -62,6 +62,7 @@ namespace Gley.NavigationSystem
         public int ChannelMask { get { return settings.ChannelMask; } }
         public bool ShowOffScreenArrows { get { return settings.ShowOffScreenArrows; } }
         public bool ShowArrowDistance { get { return settings.ShowArrowDistance; } }
+        public bool ShowMarkerLabels { get { return settings.ShowMarkerLabels; } }
 
         internal MapView(MonoBehaviour host, RectTransform viewport, MapViewSettings settings)
         {

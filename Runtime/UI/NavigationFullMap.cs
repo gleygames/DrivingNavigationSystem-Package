@@ -12,7 +12,7 @@ namespace Gley.NavigationSystem
     {
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
-        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.FullMapChannelBit, true);
+        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.FullMapChannelBit, true, true);
         [SerializeField] private FullMapInteractionSettings interactionSettings = new FullMapInteractionSettings();
         [SerializeField] private Image crosshairImage;
         [SerializeField] private PreviewPanelSlots previewPanel = new PreviewPanelSlots();

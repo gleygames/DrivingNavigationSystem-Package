@@ -22,6 +22,7 @@ namespace Gley.NavigationSystem.Editor
             "fullMap",
             "viewSettings.showOffScreenArrows",
             "viewSettings.showArrowDistance",
+            "viewSettings.showMarkerLabels",
             "compassButton",
             "compassIcon"
         };
@@ -88,6 +89,9 @@ namespace Gley.NavigationSystem.Editor
                 drawer.DrawProperty(serializedObject, "fullMap");
                 EditorGUILayout.LabelField("Empty = found automatically", EditorStyles.miniLabel);
             }
+
+            drawer.DrawHeader("Markers");
+            drawer.DrawProperty(serializedObject, "viewSettings.showMarkerLabels");
 
             drawer.DrawHeader("Off-screen arrows");
             drawer.DrawProperty(serializedObject, "viewSettings.showOffScreenArrows");

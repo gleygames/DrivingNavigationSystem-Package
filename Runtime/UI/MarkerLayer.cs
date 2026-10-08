@@ -31,6 +31,8 @@ namespace Gley.NavigationSystem
 
         private MapView view;
         private MapMarker shownSelection;
+        private bool shownMarkerLabels;
+        private bool hasShownMarkerLabels;
         private RectTransform arrowContainer;
         private RectTransform labelContainer;
         [SerializeField] private float cullMarginFraction = 0.1f;
@@ -78,6 +80,16 @@ namespace Gley.NavigationSystem
                 {
                     ApplySelectionChange(manager, shownSelection, selected);
                     shownSelection = selected;
+                }
+
+                if (!hasShownMarkerLabels || shownMarkerLabels != view.ShowMarkerLabels)
+                {
+                    if (hasShownMarkerLabels)
+                    {
+                        RebindActiveInstances(manager, selected);
+                    }
+                    shownMarkerLabels = view.ShowMarkerLabels;
+                    hasShownMarkerLabels = true;
                 }
 
                 GameObject selectedInstance = null;
@@ -230,6 +242,7 @@ namespace Gley.NavigationSystem
         private void ReleaseAllActive()
         {
             shownSelection = null;
+            hasShownMarkerLabels = false;
 
             releaseScratch.Clear();
             foreach (KeyValuePair<int, GameObject> pair in activeInstances)
@@ -319,6 +332,15 @@ namespace Gley.NavigationSystem
             activeVisualVersions.Remove(index);
             UnbindVisuals(instance);
             ReturnToPool(instance);
+        }
+
+        private void RebindActiveInstances(NavigationManager manager, MapMarker selected)
+        {
+            foreach (KeyValuePair<int, GameObject> pair in activeInstances)
+            {
+                UnbindVisuals(pair.Value);
+                BindInstance(pair.Value, manager.Markers.GetEntry(pair.Key), selected);
+            }
         }
 
         private void BindInstance(GameObject instance, MarkerEntry entry, MapMarker selected)

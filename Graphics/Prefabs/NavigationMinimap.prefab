@@ -519,6 +519,7 @@ MonoBehaviour:
     showPreview: 0
     showOffScreenArrows: 1
     showArrowDistance: 1
+    showMarkerLabels: 0
   followSettings:
     rotationMode: 0
     carOffsetFromBottom: 0.3

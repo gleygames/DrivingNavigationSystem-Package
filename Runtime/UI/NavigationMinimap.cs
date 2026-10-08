@@ -11,7 +11,7 @@ namespace Gley.NavigationSystem
     {
         [SerializeField] private NavigationManager manager;
         [SerializeField] private RectTransform viewport;
-        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.MinimapChannelBit, false);
+        [SerializeField] private MapViewSettings viewSettings = new MapViewSettings(MapViewSettings.MinimapChannelBit, false, false);
         [SerializeField] private MinimapFollowSettings followSettings = new MinimapFollowSettings();
         [SerializeField] private MinimapShapeSettings shapeSettings = new MinimapShapeSettings();
         [SerializeField] private MinimapTapAction tapAction = MinimapTapAction.OpenFullMap;
