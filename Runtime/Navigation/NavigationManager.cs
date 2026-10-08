@@ -1237,6 +1237,8 @@ namespace Gley.NavigationSystem
                 hasPreview = false;
                 RemovePreviewMarker();
                 RaisePreviewCanceled();
+                ClearSelectionIfPreviewMarker();
+                previewMarker = null;
             }
 
             hasActiveRoute = false;
@@ -1514,6 +1516,10 @@ namespace Gley.NavigationSystem
             }
 
             BeginNavigationFromScratch(trueDestination);
+            if (marker != null && marker == selectedMarker)
+            {
+                ExecuteClearSelection();
+            }
         }
 
         private void BeginNavigationFromScratch(Vector3 trueDestination)
@@ -1566,6 +1572,8 @@ namespace Gley.NavigationSystem
             hasPreview = false;
             RemovePreviewMarker();
             BeginNavigationFromScratch(previewDestination);
+            ClearSelectionIfPreviewMarker();
+            previewMarker = null;
         }
 
         private void ExecuteCancelPreview()
@@ -1578,6 +1586,16 @@ namespace Gley.NavigationSystem
             hasPreview = false;
             RemovePreviewMarker();
             RaisePreviewCanceled();
+            ClearSelectionIfPreviewMarker();
+            previewMarker = null;
+        }
+
+        private void ClearSelectionIfPreviewMarker()
+        {
+            if (previewMarker != null && previewMarker == selectedMarker)
+            {
+                ExecuteClearSelection();
+            }
         }
 
         private void ExecuteStopNavigation()
