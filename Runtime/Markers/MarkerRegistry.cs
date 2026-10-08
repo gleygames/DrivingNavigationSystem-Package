@@ -49,13 +49,19 @@ namespace Gley.NavigationSystem
 
         private int AcquireIndex()
         {
+            int index;
             if (freeIndices.Count > 0)
             {
-                return freeIndices.Pop();
+                index = freeIndices.Pop();
+            }
+            else
+            {
+                entries.Add(new MarkerEntry());
+                index = entries.Count - 1;
             }
 
-            entries.Add(new MarkerEntry());
-            return entries.Count - 1;
+            entries[index].Generation++;
+            return index;
         }
 
         public void RemoveObject(MapMarker marker)

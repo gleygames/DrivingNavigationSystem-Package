@@ -16,6 +16,8 @@ namespace Gley.NavigationSystem
         private readonly Dictionary<GameObject, RectTransform> arrowLabels = new Dictionary<GameObject, RectTransform>();
         private readonly Dictionary<GameObject, Vector2> arrowLabelOffsets = new Dictionary<GameObject, Vector2>();
         private readonly Dictionary<int, GameObject> activeInstances = new Dictionary<int, GameObject>();
+        private readonly Dictionary<GameObject, IMapMarkerVisual[]> visualsOf = new Dictionary<GameObject, IMapMarkerVisual[]>();
+        private readonly Dictionary<int, int> activeGenerations = new Dictionary<int, int>();
         private readonly Dictionary<int, GameObject> activeArrows = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, float> arrowDistanceShown = new Dictionary<int, float>();
         private readonly List<int> currentVisible = new List<int>();
@@ -99,6 +101,12 @@ namespace Gley.NavigationSystem
 
                     ReleaseArrowInstance(index);
 
+                    int activeGeneration;
+                    if (activeGenerations.TryGetValue(index, out activeGeneration) && activeGeneration != entry.Generation)
+                    {
+                        ReleaseInstance(index);
+                    }
+
                     GameObject instance;
                     if (!activeInstances.TryGetValue(index, out instance))
                     {
@@ -108,6 +116,8 @@ namespace Gley.NavigationSystem
                             continue;
                         }
                         activeInstances.Add(index, instance);
+                        activeGenerations[index] = entry.Generation;
+                        BindVisuals(instance, entry.Marker);
                     }
                     PositionMarker(instance, entry, viewportPoint, frame);
                 }
@@ -272,7 +282,35 @@ namespace Gley.NavigationSystem
                 return;
             }
             activeInstances.Remove(index);
+            activeGenerations.Remove(index);
+            UnbindVisuals(instance);
             ReturnToPool(instance);
+        }
+
+        private void BindVisuals(GameObject instance, MapMarker marker)
+        {
+            IMapMarkerVisual[] visuals;
+            if (!visualsOf.TryGetValue(instance, out visuals))
+            {
+                return;
+            }
+            for (int i = 0; i < visuals.Length; i++)
+            {
+                visuals[i].Bind(marker, view);
+            }
+        }
+
+        private void UnbindVisuals(GameObject instance)
+        {
+            IMapMarkerVisual[] visuals;
+            if (!visualsOf.TryGetValue(instance, out visuals))
+            {
+                return;
+            }
+            for (int i = 0; i < visuals.Length; i++)
+            {
+                visuals[i].Unbind();
+            }
         }
 
         private void ReturnToPool(GameObject instance)
@@ -494,7 +532,12 @@ namespace Gley.NavigationSystem
                 return null;
             }
 
-            return AcquireFromPool(resolvedPrefab, transform);
+            GameObject instance = AcquireFromPool(resolvedPrefab, transform);
+            if (!visualsOf.ContainsKey(instance))
+            {
+                visualsOf.Add(instance, instance.GetComponentsInChildren<IMapMarkerVisual>(true));
+            }
+            return instance;
         }
 
         private void PositionMarker(GameObject instance, MarkerEntry entry, Vector2 viewportPoint, MapFrame frame)
