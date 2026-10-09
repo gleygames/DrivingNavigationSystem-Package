@@ -21,6 +21,9 @@ namespace Gley.NavigationSystem.Editor
         private readonly CapturePlanner planner;
         private readonly NavigationEditorPrefs prefs;
         private readonly CaptureSettings settings;
+        private readonly GUIContent resolutionLabel;
+        private readonly GUIContent pieceSizeLabel;
+        private readonly GUIContent pieceOverlapLabel;
 
         private MapData pendingData;
         private Texture2D previewTexture;
@@ -40,6 +43,9 @@ namespace Gley.NavigationSystem.Editor
             settings = new CaptureSettings();
             templateSizeLabels = new string[] { "2048 px", "4096 px" };
             templateSizeValues = new int[] { 2048, 4096 };
+            resolutionLabel = new GUIContent("Resolution (longer side)", "Final map image size in pixels along the longer side of the area. Up to 16384. Above 4096, mobile builds use a downscaled copy.");
+            pieceSizeLabel = new GUIContent("Piece Size (m)", "The map is rendered in square tiles of this size and stitched together. Does not change the final resolution. Smaller pieces capture slower but can improve LOD and shadow detail.");
+            pieceOverlapLabel = new GUIContent("Piece Overlap (px)", "Extra pixels rendered around each piece and discarded when stitching. Increase if you see seams between pieces.");
 
             string json = prefs.CaptureSettingsJson;
             if (!string.IsNullOrEmpty(json))
@@ -110,13 +116,13 @@ namespace Gley.NavigationSystem.Editor
 
         private void DrawSettingsFields()
         {
-            int longerSide = EditorGUILayout.IntField("Resolution (longer side)", settings.LongerSidePixels);
+            int longerSide = EditorGUILayout.IntField(resolutionLabel, settings.LongerSidePixels);
             settings.LongerSidePixels = Mathf.Clamp(longerSide, MinLongerSidePixels, CaptureSettings.MaxLongerSidePixels);
 
-            float pieceSize = EditorGUILayout.FloatField("Piece Size (m)", settings.PieceSizeMeters);
+            float pieceSize = EditorGUILayout.FloatField(pieceSizeLabel, settings.PieceSizeMeters);
             settings.PieceSizeMeters = Mathf.Max(MinPieceSizeMeters, pieceSize);
 
-            int overlap = EditorGUILayout.IntField("Piece Overlap (px)", settings.PieceOverlapPx);
+            int overlap = EditorGUILayout.IntField(pieceOverlapLabel, settings.PieceOverlapPx);
             settings.PieceOverlapPx = Mathf.Clamp(overlap, 0, MaxOverlapPx);
 
             int layerMask = InternalEditorUtility.LayerMaskToConcatenatedLayersMask(settings.Layers);
