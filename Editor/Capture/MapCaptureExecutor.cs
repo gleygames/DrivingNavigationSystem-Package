@@ -213,23 +213,16 @@ namespace Gley.NavigationSystem.Editor
                 rectMaxZ = Mathf.Max(rectMaxZ, worldZ);
             }
 
+            List<Bounds> sceneBounds = new List<Bounds>();
+            AddRendererBounds(layers, sceneBounds);
+            AddTerrainBounds(layers, sceneBounds);
+
             bool found = false;
             float minY = 0f;
             float maxY = 0f;
-            Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
-            for (int i = 0; i < renderers.Length; i++)
+            for (int i = 0; i < sceneBounds.Count; i++)
             {
-                Renderer renderer = renderers[i];
-                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-                if ((layers.value & (1 << renderer.gameObject.layer)) == 0)
-                {
-                    continue;
-                }
-
-                Bounds bounds = renderer.bounds;
+                Bounds bounds = sceneBounds[i];
                 if (bounds.max.x < rectMinX || bounds.min.x > rectMaxX || bounds.max.z < rectMinZ || bounds.min.z > rectMaxZ)
                 {
                     continue;
@@ -272,6 +265,44 @@ namespace Gley.NavigationSystem.Editor
                 return new Vector2(size.x, size.y);
             }
             return new Vector2(0f, size.y);
+        }
+
+        private void AddRendererBounds(LayerMask layers, List<Bounds> sceneBounds)
+        {
+            Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+                if ((layers.value & (1 << renderer.gameObject.layer)) == 0)
+                {
+                    continue;
+                }
+                sceneBounds.Add(renderer.bounds);
+            }
+        }
+
+        private void AddTerrainBounds(LayerMask layers, List<Bounds> sceneBounds)
+        {
+            Terrain[] terrains = UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+            for (int i = 0; i < terrains.Length; i++)
+            {
+                Terrain terrain = terrains[i];
+                if (!terrain.enabled || !terrain.gameObject.activeInHierarchy || terrain.terrainData == null)
+                {
+                    continue;
+                }
+                if ((layers.value & (1 << terrain.gameObject.layer)) == 0)
+                {
+                    continue;
+                }
+
+                Bounds localBounds = terrain.terrainData.bounds;
+                sceneBounds.Add(new Bounds(terrain.GetPosition() + localBounds.center, localBounds.size));
+            }
         }
 
         private void ConfigureCamera(Camera camera, CaptureSettings settings, MapFrame frame, CameraDepthPlan depth, float unitsPerMeter)
