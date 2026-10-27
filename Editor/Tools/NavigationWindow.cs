@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
-using Gley.Common.Editor;
 
 namespace Gley.NavigationSystem.Editor
 {

@@ -1,4 +1,3 @@
-using Gley.Common;
 using UnityEngine;
 
 namespace Gley.NavigationSystem

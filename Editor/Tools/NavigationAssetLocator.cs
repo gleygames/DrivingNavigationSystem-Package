@@ -1,6 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using Gley.Common;
 
 namespace Gley.NavigationSystem.Editor
 {

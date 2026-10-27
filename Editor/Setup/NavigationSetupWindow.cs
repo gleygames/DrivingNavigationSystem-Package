@@ -4,8 +4,6 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Gley.Common;
-using Gley.Common.Editor;
 
 namespace Gley.NavigationSystem.Editor
 {
@@ -239,7 +237,7 @@ namespace Gley.NavigationSystem.Editor
             }
 
             bool trafficSystemPresent = evaluator.IsTrafficSystemPresent(assemblyNames);
-            PreprocessorDirective.AddToCurrent(TrafficSystemDefine, !trafficSystemPresent);
+            new PreprocessorDirective().AddToCurrent(TrafficSystemDefine, !trafficSystemPresent);
         }
 
         private void HandleSceneGUI(SceneView sceneView)

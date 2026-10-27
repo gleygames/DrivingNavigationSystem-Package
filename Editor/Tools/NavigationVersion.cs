@@ -1,5 +1,3 @@
-using Gley.Common.Editor;
-
 namespace Gley.NavigationSystem.Editor
 {
     public class NavigationVersion : IVersion

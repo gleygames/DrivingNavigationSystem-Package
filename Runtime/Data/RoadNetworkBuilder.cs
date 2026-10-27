@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Gley.Common;
 using UnityEngine;
 
 namespace Gley.NavigationSystem
