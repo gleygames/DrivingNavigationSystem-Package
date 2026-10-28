@@ -1,0 +1,23 @@
+{
+    "name": "Gley.NavigationSystem.Editor.Dev",
+    "rootNamespace": "Gley.NavigationSystem.Dev",
+    "references": [
+        "Gley.NavigationSystem",
+        "Gley.NavigationSystem.Editor",
+        "Gley.NavigationSystem.Dev",
+        "Gley.NavigationSystem.TMP",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
