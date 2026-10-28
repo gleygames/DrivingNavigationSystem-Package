@@ -9,7 +9,6 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationSetupWindow : EditorWindow
     {
-        private const string FallbackRootFolder = "Assets/Gley/DrivingNavigationSystem";
         private const string GamepadAdapterTypeName = "Gley.NavigationSystem.InputSystem.GamepadInputAdapter, Gley.NavigationSystem.InputSystem";
         private const string InputSystemUIModuleTypeName = "UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem";
         private const string InputSystemAssemblyName = "Unity.InputSystem";
@@ -94,7 +93,7 @@ namespace Gley.NavigationSystem.Editor
 
         private void ResolvePaths()
         {
-            rootFolder = ResolveRootFolder();
+            rootFolder = new NavigationPackageLocator().PackageRoot();
             prefabFolder = rootFolder + "/Graphics/Prefabs";
             minimapPrefabPath = prefabFolder + "/NavigationMinimap.prefab";
             fullMapPrefabPath = prefabFolder + "/NavigationFullMap.prefab";
@@ -634,16 +633,6 @@ namespace Gley.NavigationSystem.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             return canvas;
-        }
-
-        private string ResolveRootFolder()
-        {
-            UnityEditor.PackageManager.PackageInfo package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(NavigationSetupWindow).Assembly);
-            if (package != null)
-            {
-                return package.assetPath;
-            }
-            return FallbackRootFolder;
         }
 
         private void AddMinimapAndFullMap(InputModuleChoice desired)
