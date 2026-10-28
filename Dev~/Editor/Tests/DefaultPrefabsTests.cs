@@ -11,13 +11,6 @@ namespace Gley.NavigationSystem.Dev.Tests
 
         private readonly DevAssetPaths paths = new DevAssetPaths();
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            new PlaceholderArtGenerator().GeneratePlaceholderArt();
-            new DefaultPrefabBuilder().BuildDefaultPrefabs();
-        }
-
         [Test]
         public void MinimapPrefab_HasRequiredComponents()
         {
