@@ -109,11 +109,7 @@ namespace Gley.NavigationSystem.Editor
 
             if (resolved == null)
             {
-                NavigationMap[] maps = UnityEngine.Object.FindObjectsOfType<NavigationMap>();
-                if (maps.Length > 0)
-                {
-                    resolved = maps[0];
-                }
+                resolved = UnityEngine.Object.FindAnyObjectByType<NavigationMap>();
             }
 
             targetMap = resolved;

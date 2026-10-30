@@ -19,7 +19,11 @@ namespace Gley.NavigationSystem.Editor
 
         public void SnapSceneObjectsToAsset(MapData data, float unitsPerMeter, string undoName)
         {
-            NavigationMap[] maps = Object.FindObjectsOfType<NavigationMap>(true);
+#if UNITY_6000_4_OR_NEWER
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>(FindObjectsInactive.Include);
+#else
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < maps.Length; i++)
             {
                 NavigationMap map = maps[i];

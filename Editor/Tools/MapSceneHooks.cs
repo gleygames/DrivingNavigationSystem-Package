@@ -23,7 +23,11 @@ namespace Gley.NavigationSystem.Editor
             MapRectangleSync sync = new MapRectangleSync();
             float unitsPerMeter = ResolveUnitsPerMeter();
 
-            NavigationMap[] maps = Object.FindObjectsOfType<NavigationMap>();
+#if UNITY_6000_4_OR_NEWER
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>();
+#else
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>(FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < maps.Length; i++)
             {
                 NavigationMap map = maps[i];

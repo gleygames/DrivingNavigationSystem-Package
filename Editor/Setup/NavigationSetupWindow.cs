@@ -350,7 +350,11 @@ namespace Gley.NavigationSystem.Editor
 
         private void ApplyInitialRectangle(MapData mapAsset)
         {
+#if UNITY_6000_4_OR_NEWER
+            Renderer[] renderers = FindObjectsByType<Renderer>();
+#else
             Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+#endif
             if (renderers.Length == 0)
             {
                 mapAsset.SetRectangleCenter(Vector3.zero);
@@ -444,8 +448,13 @@ namespace Gley.NavigationSystem.Editor
 
             float metersPerPixel = data.RectangleSize.x / data.Image.width;
 
+#if UNITY_6000_4_OR_NEWER
+            NavigationMinimap[] minimaps = FindObjectsByType<NavigationMinimap>(FindObjectsInactive.Exclude);
+            NavigationFullMap[] fullMaps = FindObjectsByType<NavigationFullMap>(FindObjectsInactive.Exclude);
+#else
             NavigationMinimap[] minimaps = FindObjectsByType<NavigationMinimap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             NavigationFullMap[] fullMaps = FindObjectsByType<NavigationFullMap>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+#endif
             if (minimaps.Length == 0 && fullMaps.Length == 0)
             {
                 DrawBlurLine("Minimap (default)", DefaultMinimapWidthCanvas, DefaultMinZoomMeters, metersPerPixel);

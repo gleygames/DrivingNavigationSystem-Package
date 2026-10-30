@@ -26,7 +26,11 @@ namespace Gley.NavigationSystem.Editor
             NavigationAssetLocator locator = new NavigationAssetLocator();
             BakeStatus bakeStatus = new BakeStatus();
 
-            NavigationMap[] maps = Object.FindObjectsOfType<NavigationMap>();
+#if UNITY_6000_4_OR_NEWER
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>();
+#else
+            NavigationMap[] maps = Object.FindObjectsByType<NavigationMap>(FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < maps.Length; i++)
             {
                 CheckMap(maps[i], locator, bakeStatus);

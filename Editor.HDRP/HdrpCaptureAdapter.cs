@@ -75,7 +75,11 @@ namespace Gley.NavigationSystem.Editor
             bool found = false;
             float bestPriority = float.MinValue;
 
+#if UNITY_6000_4_OR_NEWER
+            Volume[] volumes = Object.FindObjectsByType<Volume>();
+#else
             Volume[] volumes = Object.FindObjectsByType<Volume>(FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < volumes.Length; i++)
             {
                 Volume volume = volumes[i];

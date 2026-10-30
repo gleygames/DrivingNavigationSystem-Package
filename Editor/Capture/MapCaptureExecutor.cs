@@ -268,7 +268,11 @@ namespace Gley.NavigationSystem.Editor
 
         private void AddRendererBounds(LayerMask layers, List<Bounds> sceneBounds)
         {
+#if UNITY_6000_4_OR_NEWER
+            Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>();
+#else
             Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
@@ -286,7 +290,11 @@ namespace Gley.NavigationSystem.Editor
 
         private void AddTerrainBounds(LayerMask layers, List<Bounds> sceneBounds)
         {
+#if UNITY_6000_4_OR_NEWER
+            Terrain[] terrains = UnityEngine.Object.FindObjectsByType<Terrain>();
+#else
             Terrain[] terrains = UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+#endif
             for (int i = 0; i < terrains.Length; i++)
             {
                 Terrain terrain = terrains[i];

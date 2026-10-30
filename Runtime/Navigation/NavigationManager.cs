@@ -268,7 +268,11 @@ namespace Gley.NavigationSystem
             BeginDispatch();
             try
             {
+#if UNITY_6000_4_OR_NEWER
+                NavigationMap[] loadedMaps = FindObjectsByType<NavigationMap>();
+#else
                 NavigationMap[] loadedMaps = FindObjectsByType<NavigationMap>(FindObjectsSortMode.None);
+#endif
                 for (int i = 0; i < loadedMaps.Length; i++)
                 {
                     if (loadedMaps[i].isActiveAndEnabled)
@@ -277,7 +281,11 @@ namespace Gley.NavigationSystem
                     }
                 }
 
+#if UNITY_6000_4_OR_NEWER
+                MapMarker[] loadedMarkers = FindObjectsByType<MapMarker>();
+#else
                 MapMarker[] loadedMarkers = FindObjectsByType<MapMarker>(FindObjectsSortMode.None);
+#endif
                 for (int i = 0; i < loadedMarkers.Length; i++)
                 {
                     if (loadedMarkers[i].isActiveAndEnabled)
