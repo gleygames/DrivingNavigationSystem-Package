@@ -1,36 +1,55 @@
-# License Agreement
+# License
 
-## Non-Commercial Use License
+Copyright (c) Gley Games. All rights reserved.
 
-Copyright (c) 2026 Gley Games
+This package, including all source code, assets, and documentation (the "Package"),
+is distributed through the Unity Asset Store and is licensed under the
+**Unity Asset Store End User License Agreement** (the "EULA"):
+https://unity.com/legal/as-terms
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated source code files (the "Software"), to use, copy, modify, and distribute the Software **solely for non-commercial purposes**, subject to the following conditions:
+The EULA is the governing agreement. This file summarizes it for convenience;
+if anything here conflicts with the EULA, the EULA prevails.
 
-### 1. Permitted Use
-- The Software may be used, copied, and modified for **personal, educational, research, or hobby projects**.
-- The Software may be shared with others **only if** it remains free of charge and is used for non-commercial purposes.
+## You may
 
-### 2. Prohibited Use
-The following actions are **strictly prohibited**:
-- Selling, licensing, sublicensing, renting, leasing, or otherwise commercializing the Software or any derivative work.
-- Including the Software, in whole or in part, in any **commercial product, service, asset, plugin, framework, or paid project**.
-- Redistributing the Software as part of a paid package, marketplace listing, or monetized service.
-- Claiming ownership of the original Software or removing copyright notices.
+- Use the Package in any number of personal or commercial projects, including
+  games and applications you sell.
+- Modify the Package for use in those projects.
+- Distribute the Package as part of a built, compiled end product (for example
+  a game or app), where it cannot be extracted and reused as a standalone asset.
+- Keep the Package in your project's version control, including private
+  repositories shared with your team, provided each team member who uses it
+  holds a license where the EULA requires one.
 
-### 3. Commercial Use
-Commercial use of the Software is **not permitted** under this license.
+## You may not
 
-If you wish to use the Software for commercial purposes, you must obtain **explicit written permission** from the copyright holder.
+- Resell, redistribute, sublicense, or share the Package, or any modified
+  version of it, as source or as an asset, whether free or paid.
+- Include the Package in another asset, template, tool, framework, or SDK.
+- Publish the Package's source in a public repository or any place where
+  people who have not obtained it from the Asset Store can access it.
+- Upload, post, link to, or otherwise share the Package, or any part or
+  modified version of it, on asset-sharing, "free download", leak, warez,
+  torrent, or file-hosting sites, or in forums, Discord servers, Telegram
+  channels, or similar communities.
+- Remove or alter this license or the copyright notices.
 
-### 4. Attribution
-Any redistribution of the Software for non-commercial purposes must retain this license file and all original copyright notices.
+## Unauthorized copies
 
-### 5. No Warranty
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+The only authorized source of this Package is the Unity Asset Store.
+Copies obtained from any other source, including sites that redistribute
+Asset Store content without the publisher's permission, are not licensed.
+No rights of any kind are granted to anyone using such a copy, including the
+right to use it in any project, personal or commercial, released or unreleased.
 
-### 6. Termination
-Any violation of this license will automatically terminate your rights under this agreement.
+Gley Games reserves the right to pursue removal of unauthorized copies and
+any other remedies available under applicable law.
 
----
+## No warranty
 
-For questions regarding licensing or commercial usage, please contact the copyright holder at gleygames@hotmail.com
+The Package is provided "as is", without warranty of any kind. To the extent
+permitted by law, Gley Games is not liable for any damages arising from its use.
+
+## Contact
+
+For permissions beyond these terms, contact gleygames@hotmail.com.
