@@ -12,6 +12,7 @@ namespace Gley.NavigationSystem.Editor
         private readonly RoadEditorContext context;
         private readonly RoadValidator validator;
         private readonly WorldConverter converter;
+        private readonly GleyColors colors = new GleyColors(EditorGUIUtility.isProSkin);
 
         private Vector2 scrollPosition;
         private int selectedIndex;
@@ -77,7 +78,7 @@ namespace Gley.NavigationSystem.Editor
             UpdateConverter();
             Vector3 world = converter.TrueToWorld(context.ValidationIssues[selectedIndex].Position);
 
-            Handles.color = Color.yellow;
+            Handles.color = colors.HandleSelected;
             Handles.DrawWireDisc(world, Vector3.up, SelectedMarkerRadius * context.UnitsPerMeter);
         }
 

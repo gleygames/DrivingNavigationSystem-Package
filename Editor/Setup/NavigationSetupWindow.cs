@@ -56,6 +56,7 @@ namespace Gley.NavigationSystem.Editor
         private string inputActionsPath;
         private float pendingYawOffset;
         private bool carSpawnedAtRuntime;
+        private GleyColors colors;
 
         [MenuItem(NavigationSetupWindowProperties.MenuItem, false, 1)]
         private static void OpenWindow()
@@ -69,6 +70,7 @@ namespace Gley.NavigationSystem.Editor
 
         private void OnEnable()
         {
+            colors = new GleyColors(EditorGUIUtility.isProSkin);
             ResolvePaths();
             locator = new NavigationAssetLocator();
             evaluator = new SetupStatusEvaluator();
@@ -250,7 +252,7 @@ namespace Gley.NavigationSystem.Editor
             if (car != null)
             {
                 Vector3 direction = car.rotation * Quaternion.Euler(0f, pendingYawOffset, 0f) * Vector3.forward;
-                Handles.color = Color.cyan;
+                Handles.color = colors.Handle;
                 Handles.ArrowHandleCap(0, car.position, Quaternion.LookRotation(direction), GizmoArrowLength, EventType.Repaint);
                 return;
             }
@@ -258,7 +260,7 @@ namespace Gley.NavigationSystem.Editor
             if (carSpawnedAtRuntime && previewCarPrefab != null)
             {
                 Vector3 previewDirection = Quaternion.Euler(0f, pendingYawOffset, 0f) * Vector3.forward;
-                Handles.color = Color.cyan;
+                Handles.color = colors.Handle;
                 Handles.DrawWireCube(previewCarBounds.center, previewCarBounds.size);
                 Handles.ArrowHandleCap(0, previewCarBounds.center, Quaternion.LookRotation(previewDirection), GizmoArrowLength, EventType.Repaint);
             }

@@ -15,6 +15,7 @@ namespace Gley.NavigationSystem.Editor
         private const float ArrowSize = 1.5f;
 
         private readonly NavigationEditorPrefs prefs;
+        private readonly GleyColors colors = new GleyColors(EditorGUIUtility.isProSkin);
         private Vector3[] worldPointsBuffer = new Vector3[0];
 
         public RoadSceneDrawer(NavigationEditorPrefs prefs)
@@ -171,7 +172,7 @@ namespace Gley.NavigationSystem.Editor
         private void DrawKeyPoints(AuthoringRoad road, float unitsPerMeter)
         {
             List<AuthoringKeyPoint> keyPoints = road.KeyPoints;
-            Handles.color = Color.cyan;
+            Handles.color = colors.Handle;
             for (int i = 0; i < keyPoints.Count; i++)
             {
                 Vector3 worldPosition = ToWorld(keyPoints[i].Position, unitsPerMeter);
@@ -195,7 +196,7 @@ namespace Gley.NavigationSystem.Editor
         private void DrawIntersections(RoadNetworkAuthoring authoring, float unitsPerMeter)
         {
             List<AuthoringIntersection> intersections = authoring.Intersections;
-            Handles.color = Color.green;
+            Handles.color = colors.HandleValid;
             for (int i = 0; i < intersections.Count; i++)
             {
                 Vector3 worldPosition = ToWorld(intersections[i].Position, unitsPerMeter);
@@ -210,7 +211,7 @@ namespace Gley.NavigationSystem.Editor
                 return;
             }
 
-            Handles.color = Color.red;
+            Handles.color = colors.HandleInvalid;
             for (int i = 0; i < validationIssues.Count; i++)
             {
                 Vector3 worldPosition = ToWorld(validationIssues[i].Position, unitsPerMeter);

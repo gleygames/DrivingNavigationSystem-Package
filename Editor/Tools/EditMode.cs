@@ -28,6 +28,8 @@ namespace Gley.NavigationSystem.Editor
         private readonly RoadValidator validator;
         private readonly RoadCurve curve;
         private readonly WorldConverter converter;
+        private readonly GleyColors colors = new GleyColors(EditorGUIUtility.isProSkin);
+        private readonly Color tangentColor = new Color(0.7f, 0.53f, 1f);
 
         private Vector3[] lineBuffer = new Vector3[0];
         private Camera sceneCamera;
@@ -470,7 +472,7 @@ namespace Gley.NavigationSystem.Editor
             RoadNetworkAuthoring authoring = context.Authoring;
             List<int> roadIds = selection.RoadIds;
 
-            Handles.color = new Color(1f, 0.92f, 0.016f, 0.8f);
+            Handles.color = colors.HandleSelected;
             for (int i = 0; i < roadIds.Count; i++)
             {
                 AuthoringRoad road = authoring.FindRoad(roadIds[i]);
@@ -485,7 +487,7 @@ namespace Gley.NavigationSystem.Editor
                 AuthoringIntersection intersection = authoring.FindIntersection(selection.IntersectionId);
                 if (intersection != null)
                 {
-                    Handles.color = Color.yellow;
+                    Handles.color = colors.HandleSelected;
                     Handles.DrawWireDisc(ToWorld(intersection.Position), Vector3.up, SelectedIntersectionRadius * context.UnitsPerMeter);
                 }
             }
@@ -567,11 +569,11 @@ namespace Gley.NavigationSystem.Editor
 
             if (selection.KeyPointRoadId == road.Id && selection.KeyPointIndex == index)
             {
-                Handles.color = Color.yellow;
+                Handles.color = colors.HandleSelected;
             }
             else
             {
-                Handles.color = Color.cyan;
+                Handles.color = colors.Handle;
             }
 
             Vector3 newWorld;
@@ -667,11 +669,11 @@ namespace Gley.NavigationSystem.Editor
 
             if (selection.IntersectionId == intersection.Id)
             {
-                Handles.color = Color.yellow;
+                Handles.color = colors.HandleSelected;
             }
             else
             {
-                Handles.color = Color.green;
+                Handles.color = colors.HandleValid;
             }
 
             Vector3 newWorld;
@@ -727,7 +729,7 @@ namespace Gley.NavigationSystem.Editor
             Vector3 tipWorld = ToWorld(keyPoint.Position + offset);
             float size = HandleUtility.GetHandleSize(tipWorld) * CurveHandleSize;
 
-            Handles.color = new Color(1f, 0.5f, 0f);
+            Handles.color = tangentColor;
             if (Event.current.type == EventType.Repaint)
             {
                 Handles.DrawLine(keyWorld, tipWorld);
@@ -1170,9 +1172,11 @@ namespace Gley.NavigationSystem.Editor
             }
 
             Rect rect = GetBoxRect();
-            Color edgeColor = new Color(0.4f, 0.7f, 1f, 0.9f);
+            Color edgeColor = colors.HandleSelected;
             Handles.BeginGUI();
-            EditorGUI.DrawRect(rect, new Color(0.4f, 0.7f, 1f, 0.15f));
+            Color fillColor = colors.HandleSelected;
+            fillColor.a = 0.15f;
+            EditorGUI.DrawRect(rect, fillColor);
             EditorGUI.DrawRect(new Rect(rect.xMin, rect.yMin, rect.width, 1f), edgeColor);
             EditorGUI.DrawRect(new Rect(rect.xMin, rect.yMax - 1f, rect.width, 1f), edgeColor);
             EditorGUI.DrawRect(new Rect(rect.xMin, rect.yMin, 1f, rect.height), edgeColor);

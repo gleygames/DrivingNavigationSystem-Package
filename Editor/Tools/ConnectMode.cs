@@ -13,6 +13,7 @@ namespace Gley.NavigationSystem.Editor
         private readonly SnapFinder snapFinder;
         private readonly RoadValidator validator;
         private readonly WorldConverter converter;
+        private readonly GleyColors colors = new GleyColors(EditorGUIUtility.isProSkin);
 
         private SnapTarget hoverSnap;
         private Vector3 hoverPosition;
@@ -241,7 +242,7 @@ namespace Gley.NavigationSystem.Editor
                 {
                     hasFrom = true;
                     fromWorld = converter.TrueToWorld(fromIntersection.Position);
-                    Handles.color = Color.green;
+                    Handles.color = colors.HandleValid;
                     Handles.DrawWireDisc(fromWorld, Vector3.up, HandleUtility.GetHandleSize(fromWorld) * SnapHighlightSize);
                 }
             }
@@ -255,13 +256,13 @@ namespace Gley.NavigationSystem.Editor
             if (hoverSnap.Kind != SnapTargetKind.None)
             {
                 targetWorld = converter.TrueToWorld(hoverSnap.Position);
-                Handles.color = new Color(1f, 0.92f, 0.016f, 0.6f);
+                Handles.color = colors.HandlePreview;
                 Handles.DrawSolidDisc(targetWorld, Vector3.up, HandleUtility.GetHandleSize(targetWorld) * SnapHighlightSize);
             }
 
             if (hasFrom)
             {
-                Handles.color = Color.white;
+                Handles.color = colors.HandlePreview;
                 Handles.DrawDottedLine(fromWorld, targetWorld, DottedLineSpacing);
             }
         }

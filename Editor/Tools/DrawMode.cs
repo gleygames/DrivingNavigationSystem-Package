@@ -25,6 +25,7 @@ namespace Gley.NavigationSystem.Editor
         private readonly RoadCurve curve;
         private readonly AuthoringRoad previewRoad;
         private readonly WorldConverter converter;
+        private readonly GleyColors colors = new GleyColors(EditorGUIUtility.isProSkin);
 
         private Vector3[] previewBuffer = new Vector3[0];
         private SnapTarget hoverSnap;
@@ -620,12 +621,12 @@ namespace Gley.NavigationSystem.Editor
             }
 
             Vector3 endWorld = converter.TrueToWorld(GetExtendEndPosition(road));
-            Handles.color = Color.green;
+            Handles.color = colors.HandleValid;
             Handles.DrawWireDisc(endWorld, Vector3.up, HandleUtility.GetHandleSize(endWorld) * SnapHighlightSize);
 
             if (hasHover)
             {
-                Handles.color = Color.white;
+                Handles.color = colors.HandlePreview;
                 Handles.DrawDottedLine(endWorld, converter.TrueToWorld(GetClickPosition()), DottedLineSpacing);
             }
         }
@@ -647,7 +648,7 @@ namespace Gley.NavigationSystem.Editor
                 DrawPreviewCurve();
             }
 
-            Handles.color = new Color(1f, 0.5f, 0f);
+            Handles.color = colors.HandlePreview;
             for (int i = 0; i < keyPoints.Count; i++)
             {
                 Vector3 world = converter.TrueToWorld(keyPoints[i]);
@@ -682,7 +683,7 @@ namespace Gley.NavigationSystem.Editor
                 }
             }
 
-            Handles.color = new Color(1f, 0.5f, 0f);
+            Handles.color = colors.HandlePreview;
             Handles.DrawAAPolyLine(PreviewLineWidth, index, previewBuffer);
         }
 
@@ -696,13 +697,13 @@ namespace Gley.NavigationSystem.Editor
             if (hoverSnap.Kind != SnapTargetKind.None)
             {
                 Vector3 snapWorld = converter.TrueToWorld(hoverSnap.Position);
-                Handles.color = new Color(1f, 0.92f, 0.016f, 0.6f);
+                Handles.color = colors.HandlePreview;
                 Handles.DrawSolidDisc(snapWorld, Vector3.up, HandleUtility.GetHandleSize(snapWorld) * SnapHighlightSize);
                 return;
             }
 
             Vector3 hoverWorld = converter.TrueToWorld(hoverPosition);
-            Handles.color = Color.white;
+            Handles.color = colors.HandleHover;
             Handles.DotHandleCap(0, hoverWorld, Quaternion.identity, HandleUtility.GetHandleSize(hoverWorld) * HoverDotSize, EventType.Repaint);
         }
     }
