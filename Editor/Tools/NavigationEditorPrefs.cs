@@ -5,18 +5,18 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationEditorPrefs
     {
-        private const string Prefix = "Gley.Navigation.";
+        private const string Prefix = "Gley.DrivingNavigationSystem.";
 
         public LayerMask RoadLayers
         {
-            get { return EditorPrefs.GetInt(Prefix + "RoadLayers", -1); }
-            set { EditorPrefs.SetInt(Prefix + "RoadLayers", value.value); }
+            get { return NavigationUserSettings.instance.RoadLayers; }
+            set { NavigationUserSettings.instance.RoadLayers = value.value; }
         }
 
         public string CaptureSettingsJson
         {
-            get { return EditorPrefs.GetString(Prefix + "CaptureSettings", string.Empty); }
-            set { EditorPrefs.SetString(Prefix + "CaptureSettings", value); }
+            get { return NavigationUserSettings.instance.CaptureSettingsJson; }
+            set { NavigationUserSettings.instance.CaptureSettingsJson = value; }
         }
 
         public float SnapDistance
@@ -57,8 +57,8 @@ namespace Gley.NavigationSystem.Editor
 
         public int BrushTypeId
         {
-            get { return EditorPrefs.GetInt(Prefix + "BrushTypeId", 0); }
-            set { EditorPrefs.SetInt(Prefix + "BrushTypeId", value); }
+            get { return NavigationUserSettings.instance.BrushTypeId; }
+            set { NavigationUserSettings.instance.BrushTypeId = value; }
         }
 
         public bool ShowMapOverlay

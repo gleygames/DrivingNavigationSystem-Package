@@ -5,23 +5,20 @@ namespace Gley.NavigationSystem.Editor
 {
     public class NavigationAssetLocator
     {
-        public const string DefaultRootFolder = "Assets/NavigationData";
-        private const string SettingsAssetName = "NavigationSettings";
+        private readonly DrivingNavigationSystemDataPaths dataPaths;
 
-        private readonly string rootFolder;
-
-        public NavigationAssetLocator() : this(DefaultRootFolder)
+        public NavigationAssetLocator() : this(new DrivingNavigationSystemDataPaths())
         {
         }
 
-        public NavigationAssetLocator(string rootFolder)
+        public NavigationAssetLocator(DrivingNavigationSystemDataPaths dataPaths)
         {
-            this.rootFolder = rootFolder;
+            this.dataPaths = dataPaths;
         }
 
         public string GetDefaultMapFolder(string sceneName)
         {
-            return rootFolder + "/" + sceneName;
+            return dataPaths.MapFolder(sceneName);
         }
 
         public NavigationMapAssets CreateMapAssets(string folder, string name)
@@ -53,11 +50,11 @@ namespace Gley.NavigationSystem.Editor
             string[] guids = AssetDatabase.FindAssets("t:NavigationSettings");
             if (guids.Length == 0)
             {
-                EnsureFolderExists(rootFolder);
+                EnsureFolderExists(dataPaths.Root);
 
                 NavigationSettings created = ScriptableObject.CreateInstance<NavigationSettings>();
                 created.ResetToDefaults();
-                AssetDatabase.CreateAsset(created, rootFolder + "/" + SettingsAssetName + ".asset");
+                AssetDatabase.CreateAsset(created, dataPaths.SettingsAssetPath);
                 AssetDatabase.SaveAssets();
                 return created;
             }

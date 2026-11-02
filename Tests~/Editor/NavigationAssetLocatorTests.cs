@@ -34,7 +34,7 @@ namespace Gley.NavigationSystem.Tests
 
             HideExistingSettingsAssets();
 
-            locator = new NavigationAssetLocator(TempFolder);
+            locator = new NavigationAssetLocator(new DrivingNavigationSystemDataPaths(TempFolder));
         }
 
         [TearDown]
@@ -85,7 +85,7 @@ namespace Gley.NavigationSystem.Tests
         {
             string folder = locator.GetDefaultMapFolder("TestScene");
 
-            Assert.AreEqual(TempFolder + "/TestScene", folder);
+            Assert.AreEqual(TempFolder + "/Maps/TestScene", folder);
         }
 
         [Test]
